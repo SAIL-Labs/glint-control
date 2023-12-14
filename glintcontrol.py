@@ -5,7 +5,10 @@ Eventually this will be wrapped in a GUI!
 
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime
 plt.ion()
+
+
 
 class glintcontrol:
     def __init__(self, datapath):
@@ -34,34 +37,110 @@ class glintcontrol:
         self.mems_seg_pists_opt = None # microns
 
         # For now, store data (i.e. camera images, spectra) as instance variables.
-        # Later these could become tehir own objects
-        self.current_camera_frame = None
+        # Later these could become their own objects
+        self.current_camera_frame = None # Shape [width, height]
+        self.stored_camera_frames = None # Shape [1000, width, height]. These are taken from the camera.
         self.current_flux_vectors = None # Shape [output_chans, wavelengths]
+        self.stored_flux_vectors = None # Shape [1000, width]
         self.darkframe = None # The current darkframe to subtract before extracting fluxes
+        # self.darkframe_vector = None # 10 lots of darkframes
 
 
-    def get_latest_camera_frame(self, subtract_dark=True):
+
+
+    def get_latest_camera_frame(self, subtract_dark=True): #DONE
         ### STUB
         # Get the latest camera frame, subtract self.darkframe is requested, and store in
         # self.current_camera_frame.
-        pass
+
+        if subtract_dark:
+            self.current_camera_frame = self.current_camera_frame - self.darkframe
+
+        return self.current_camera_frame
 
 
-    def get_darkframe(self, nframes=1, save_to_file=True, datapath=None, filepref=None):
+
+    def get_darkframe(self, nframes=1, save_to_file=True, datapath=None, filepref=None): #DONE
         ### STUB
         # Set the latest nframes frames from the camera, average them, and set as self.darkframe.
         # Save the darkframe to a file if requested, to specified datapath and/or file prefix
         # if provided (see self.save_test_data() for more info).
-        pass
 
+        if datapath == None:
+            datapath = self.datapath
+
+        # Retrieve the last nframes frames from the stored camera array variable
+        idx = len(self.stored_camera_frames) - nframes
+        frames = self.stored_camera_frames[idx:]
+
+        # Average over them
+        avg_frames = np.mean(frames, axis = 0)
+        self.darkframe = avg_frames
+
+        if save_to_file:
+            self.save_test_data(nframes, datapath, filepref)
+
+        return self.darkframe
+
+    def extract_flux(data, min_h, max_h, max_w=320):
+        cropped_image = [row[min_w:max_w + 1] for row in data[min_h:max_h + 1]]
+        flux_vector = np.sum(cropped_image, axis=0)
+
+        return flux_vector
 
     def get_latest_fluxes(self):
         ### STUB
         # Extract the flux vectors from self.current_camera_frame
         n_outputs = self.output_wgs.shape[0]
         n_wls = self.wl_channels.shape[0]
+
         self.current_flux_vectors = np.zeros((n_outputs, n_wls))
-        pass
+
+        data = self.current_camera_frame
+
+        spec1_min_h = 100
+        spec1_max_h = 107
+        spec1 = self.extract_flux(data, spec1_min_h, spec1_max_h)
+
+        spec2_min_h = 154
+        spec2_max_h = 163
+        spec2 = self.extract_flux(data, spec2_min_h, spec2_max_h)
+
+        spec3_min_h = 174
+        spec3_max_h = 182
+        spec3 = self.extract_flux(data, spec3_min_h, spec3_max_h)
+
+        self.current_flux_vectors = [spec1, spec2, spec3]
+
+        return self.current_flux_vectors
+
+
+    def save_test_data(self, nframes=1, datapath=None, filepref=None, save_raw_ims=False):
+        ### STUB
+        # Do a _slow_ save of nframes of extracted fluxes, and the raw camera frames if requested.
+        # This is not realtime, so will miss many frames, so is just for testing and diagnostics.
+        # npz format is probably best for now
+
+        if datapath is None:
+            datapath = self.datapath
+
+        if filepref is None:
+            dt = str(datetime.now())
+            date = dt.split()[0]
+            time = dt.split()[1]
+            filepref = "{}_{}".format(date, time)
+
+        # Retrieve the last nframes frames from the stored camera array variable
+        idx = len(self.stored_camera_frames) - nframes # This should be the same for the stored fluxes
+        frames = self.stored_camera_frames[idx:]
+        fluxes = self.stored_flux_vectors[idx:]
+
+        np.savez(datapath+filepref+'_fluxvec.npz', fluxvec = fluxes)
+
+        if save_raw_ims:
+            np.savez(datapath+filepref+'_cam.npz', camframe = frames) # Do fits file instead
+
+
 
 
     def set_MEMS_posns(self, input_wgs, cmd_posns):
@@ -70,7 +149,27 @@ class glintcontrol:
         # cmd_posns is an nx3 array of form  [[tip, tilt, piston]], where n=len(input_wgs).
         # Then update self.mems_seg_tts and self.mems_seg_pists with the new values.
         # If an element in cmd_posns is None, leave the corresponding tip/tilt/piston position unchanged
-        pass
+
+
+        # Update tt
+        tt = cmd_posns[:, (0,1)]
+        tt = np.array(tt)
+        old_tt = self.mems_seg_tts
+        old_tt = np.array(old_tt)
+
+        new_tt = np.where(tt == None, old_tt, tt)
+        self.mems_seg_tts = new_tt
+
+
+        # Update piston
+        pists = cmd_posns[:, 2]
+        pists = np.array(pists)
+        old_pists = self.mems_seg_pists
+        old_pists = np.array(old_pists)
+
+        new_pists = np.where(pists == None, old_pists, pists)
+        self.mems_seg_pists = new_pists
+
 
 
     def mems_tiptilt_scan(self, input_wg, scanlims=(-3, 3, -3, 3), showplot=False):
@@ -94,17 +193,5 @@ class glintcontrol:
         pass
 
 
-    def save_test_data(self, nframes=1, datapath=None, filepref=None, save_raw_ims=False):
-        ### STUB
-        # Do a _slow_ save of nframes of extracted fluxes, and the raw camera frames if requested.
-        # This is not realtime, so will miss many frames, so is just for testing and diagnostics.
-        # npz format is probably best for now
-
-        if datapath is None:
-            datapath = self.datapath
-
-        if filepref is None:
-            # Automatically assign a file prefix based on date/time, etc.
-            pass
-
-        pass
+path = '/Users/stephanie/PycharmProjects/GLINT/GLINT-control'
+glintcontrol = glintcontrol(path)

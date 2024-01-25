@@ -1,21 +1,11 @@
 from serial import Serial
-print('ur mum')
 
 class Mount:
+
     def __init__(self, port, baudrate) -> None:
         # self.s = Serial('/dev/ttyUSB2')#, baudrate=38400) 
         self.s = Serial(port, baudrate)
     
-    
-    def close_serial(self) -> None:
-        '''
-        This function closes the serial port.
-        '''
-        if self.s.is_open:
-            self.s.close()
-            print("Serial connection closed.")
-        else:
-            print("Serial connection is not open.")
     
     def read_command(self, cmd: str) -> str:
         '''
@@ -25,40 +15,25 @@ class Mount:
         with self.s as ser:
             ser.write(f'{cmd}\r'.encode('ascii'))
             ret = ser.read_until(b'\r')[:-1].decode()
+            self.update_log(ret)
             return ret
     
     def send_command(self, cmd: str) -> str:
         '''
-         mount.estop()
-
         This function sends a command to the stage and returns the response which is used to create verbose functions useable in python.
         params: cmd: str - the command to send to the stage
         '''
         with self.s as ser:
             ser.write(f'{cmd}\r'.encode('ascii'))
 
-
-    # def rstop(self, axis:int) -> None:
-    #     '''
-    #     This function stops the stage.
-    #     '''
-    #     cmd = f'AXI{axis}:STOP 1'
-    #     self.send_command(cmd)
     
     def rstop(self) -> None:
         '''
-        This function stops all stages.
+        This function reduction stops all stages.
         '''
         cmd = 'STOP 1'
         self.send_command(cmd)
-    
-    # def estop(self, axis:int) -> None:
-    #     '''
-    #     This function emergency stops the stage.
-    #     '''
-    #     cmd = f'AXI{axis}:STOP 0'
-    #     self.send_command(cmd)
-    
+
     def estop(self) -> None:
         '''
         This function emergency stops all stages.
@@ -66,7 +41,7 @@ class Mount:
         cmd = 'STOP 0'
         self.send_command(cmd)
 
-    mount.estop()
+ 
     def idn(self) -> str:
         '''
         This function returns the identification string of the stage.
@@ -83,7 +58,7 @@ class Mount:
         pos = int(self.read_command(cmd))
         return pos
     
-    def set_pos(self, axis:int, pos: int) -> None:
+    def set_pos(self, axis:int, pos: int) -> int:
         '''
         This function moves the stage to the specified position.
         params: pos: int - the position to move to
@@ -91,8 +66,9 @@ class Mount:
         cmd = f'AXI{axis}:GOABS {pos}'
         self.send_command(cmd)
 
-        new_pos = self.get_pos(axis)
-        print(f"position is {new_pos} for axis {axis}")
+        return self.get_pos(axis)
+
+
     
     def get_speed(self, axis:int) -> int:
         '''
@@ -111,7 +87,7 @@ class Mount:
         # assert speed > 0 and speed < 10 and isinstance(speed, int)
         cmd = f'AXI{axis}:SELSP {speed}'
         self.send_command(cmd)
-        print(f"speed set to {speed} for axis {axis}")
+
         
 
     def set_home(self, axis:int, home: int) -> None:
@@ -123,7 +99,7 @@ class Mount:
         self.send_command(cmd)
 
     
-    def home_pos(self, axis:int) -> int:
+    def get_home(self, axis:int) -> int:
         '''
         This function returns the home position of the stage.
         returns: int - the home position
@@ -148,8 +124,6 @@ class Mount:
         cmd = f'AXI{axis}:GO 3'
         self.send_command(cmd)
 
-        new_pos = self.get_pos(axis)
-        print(f"position is {new_pos} for axis {axis}")
     
     def set_origin_pattern(self, axis:int, direction:int) -> None:
         '''
@@ -158,7 +132,16 @@ class Mount:
         '''
         cmd = f'AXI{axis}:MEMSW0 {direction}'
         self.send_command(cmd)
-        print(f"origin pattern set to {direction} for axis {axis}")
+
+    
+    def get_origin_pattern(self, axis:int) -> int:
+        '''
+        This function returns the direction of the origin.
+        returns: int - 3 for positive direction, 4 for negative direction.
+        '''
+        cmd = f'AXI{axis}:MEMSW0?'
+        ret = int(self.read_command(cmd))
+        return ret
     
     def go_origin(self, axis:int) -> None:
         '''
@@ -176,14 +159,6 @@ class Mount:
         ret = bool(int(self.read_command(cmd)))
         return ret
     
-    def get_origin_pattern(self, axis:int) -> int:
-        '''
-        This function returns the direction of the origin.
-        returns: int - 3 for positive direction, 4 for negative direction.
-        '''
-        cmd = f'AXI{axis}:MEMSW0?'
-        ret = int(self.read_command(cmd))
-        return ret
     
     def is_limit(self, axis:int, soft = False) -> str:
 
@@ -198,16 +173,16 @@ class Mount:
         else:
             raise ValueError('soft must be True or False')
         
-        limit = self.read_command(cmd)
+        limit = int(self.read_command(cmd))
 
         if limit == 0:
             ret = "Undetected"
         elif limit == 1:
-            ret = "Detected upper limit"
+            ret = "Detected upper (CW) limit"
         elif limit == 2:
-            ret = "Detected lower limit"
+            ret = "Detected lower (CCW) limit"
         elif limit == 3:
-            ret = "Detected upper & lower limits"
+            ret = "Detected upper (CW) & lower (CCW) limits"
         else:
             raise ValueError(f'returned unidentified limit state {limit}, must be 0, 1, 2 or 3')
         return ret
@@ -226,7 +201,7 @@ class Mount:
             raise ValueError('direction must be "CW" or "CCW"')
         
         self.send_command(cmd)
-        print(f"limit enabled for axis {axis} in direction {direction}")
+
     
     def disable_lims(self, axis:int, direction:str) -> None:
         '''
@@ -242,7 +217,7 @@ class Mount:
             raise ValueError('direction must be "CW" or "CCW"')
         
         self.send_command(cmd)
-        print(f"limit disabled for axis {axis} in direction {direction}")
+
     
     def lim_enabled(self, axis:int, direction:str) -> bool:
         '''
@@ -274,7 +249,7 @@ class Mount:
             raise ValueError('direction must be "CW" or "CCW"')
         
         self.send_command(cmd)
-        print(f"limit set to {limit} for axis {axis} in direction {direction}")
+
     
     def get_lim(self, axis:int, direction:str) -> int:
         '''
@@ -315,7 +290,6 @@ class Mount:
         cmd = f'AXI{axis}:UNIT {num}'
         self.send_command(cmd)
 
-        print("unit set to", unit")
 
     def get_unit(self, axis:int) -> str:
         '''
@@ -347,22 +321,11 @@ class Mount:
         cmd = f'AXI{axis}:MOTION?'
         ret = bool(int(self.read_command(cmd)))
         return ret
-    
-    
-    
-    # def redefine_pos(self, axis:int, pos:int) -> None:
-    #     '''
-    #     This function redefines the current position of the stage.
-    #     params: pos: int - the position to redefine the current position to.
-    #     '''
-    #     cmd = f'AXI{axis}:POS {pos}'
-    #     self.send_command(cmd)
-
 
 
 if __name__ == "__main__":
-    # mount = Mount('usb-SURUGA_SEIKI_SURUGA_SEIKI_DS102-if00-port0', 38400)
-    mount = Mount('/dev/ttyUSB0', 38400)
+    mount = Mount('/dev/serial/by-id/usb-SURUGA_SEIKI_SURUGA_SEIKI_DS102-if00-port0', 38400)
+    # mount = Mount('/dev/ttyUSB0', 38400)
     
     
 

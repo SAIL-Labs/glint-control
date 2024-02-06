@@ -241,7 +241,7 @@ class Mount:
         if direction == 'CW':
             cmd = f'AXI{axis}:CWSLE?'
         elif direction == 'CCW':
-            cmd = f'AXIP{axis}:CCWSLE?'
+            cmd = f'AXI{axis}:CCWSLE?'
         else:
             raise ValueError('direction must be "CW" or "CCW"')
         

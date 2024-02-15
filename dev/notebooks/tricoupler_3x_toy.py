@@ -1,22 +1,52 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# %%
 # Refs:
 # - Martinod+ 2021 Applied Optics 60(19), Appendix A
 # - Klinner-Teo, thesis
 
 # transfer matrix of 
 # 3 tricouplers, with photometric taps from each input
-phase_shift = 2.*np.pi/3. # induced by phase shifters in waveguides; assumed achromatic; 120 deg = 2*pi/3
-phase_term = np.exp(1j * phase_shift) # for matrix
+
+##################################
+## START USER INPUTS
+
+# parameters of incoming complex wavefronts, before any splitting [units radians]
+# (note these are upstream of the achromatic phase shift; these phases are NOT from the APSes)
+amp_I = 1
+phase_I = 0
+amp_II = 1
+phase_II = 0
+amp_III = 1
+phase_III = 0
+
+# phase shifts induced by APSes in waveguides; assumed achromatic; 120 deg = 2*pi/3
+phase_shift_1 = 2.*np.pi/3.
+phase_shift_2 = 2.*np.pi/3.
+phase_shift_3 = 2.*np.pi/3.
 
 # splitting coefficient of that going into photometric tap at each such split (values for waveguides 1 and 2 assumed the same)
+## ## TO DO: allow for 3 different vals
 alpha_val = 0.2
 # splitting coefficients just before coupling stage (note that certain pairs have to sum to 1)
+## ## TO DO: reduce to x, 1-x pairs
 beta_val, gamma_val = 0.4, 0.6
 delta_val, omega_val = 0.5, 0.5
 eta_val, sigma_val = 0.3, 0.7
+
+## END USER INPUTS
+##################################
+
+# input wavefonts
+phasor_in_I = amp_I * np.exp(1j * phase_I)
+phasor_in_II = amp_II * np.exp(1j * phase_II)
+phasor_in_III = amp_III * np.exp(1j * phase_III)
+a_in = np.array([phasor_in_I, phasor_in_II, phasor_in_III])
+
+# phasors for APSes
+phase_term_1 = np.exp(1j * phase_shift_1)
+phase_term_2 = np.exp(1j * phase_shift_2)
+phase_term_3 = np.exp(1j * phase_shift_3)
 
 # transfer matrix of photometric splitting
 M_phot = np.array([[1 - alpha_val,         0,               0], 
@@ -41,52 +71,37 @@ M_interf = np.array([[beta_val,      0,      0,      0,      0,      0],
                    [0,      0,      0,      0,      0,      1]])
 
 # achromatic phase shifters, now arranged as a matrix
-phase_shift_1 = 2.*np.pi/3. # induced by phase shifters for baseline 1 in waveguide; assumed achromatic; 120 deg = 2*pi/3
-phase_shift_2 = 2.*np.pi/3. 
-phase_shift_3 = 2.*np.pi/3. 
-aps_1 = np.exp(1j * phase_shift_1) # achromatic phase shift term
-aps_2 = np.exp(1j * phase_shift_2)
-aps_3 = np.exp(1j * phase_shift_3)
+aps_1_phasor = np.exp(1j * phase_shift_1)
+aps_2_phasor = np.exp(1j * phase_shift_2)
+aps_3_phasor = np.exp(1j * phase_shift_3)
 
 P_aps = np.array([[1,      0,      0,      0,      0,      0,    0,      0,      0,      0,      0,      0], 
              [0,      1,      0,      0,      0,      0,    0,      0,      0,      0,      0,      0],
-             [0,      0,      aps_1,      0,      0,      0,    0,      0,      0,      0,      0,      0],
+             [0,      0,      aps_1_phasor,      0,      0,      0,    0,      0,      0,      0,      0,      0],
              [0,      0,      0,      1,      0,      0,    0,      0,      0,      0,      0,      0],
              [0,      0,      0,      0,      1,      0,    0,      0,      0,      0,      0,      0],
-             [0,      0,      0,      0,      0,      aps_2,    0,      0,      0,      0,      0,      0],
+             [0,      0,      0,      0,      0,      aps_2_phasor,    0,      0,      0,      0,      0,      0],
              [0,      0,      0,      0,      0,      0,    1,      0,      0,      0,      0,      0],
              [0,      0,      0,      0,      0,      0,    0,      1,      0,      0,      0,      0],
-             [0,      0,      0,      0,      0,      0,    0,      0,      aps_3,  0,      0,      0],
+             [0,      0,      0,      0,      0,      0,    0,      0,      aps_3_phasor,  0,      0,      0],
              [0,      0,      0,      0,      0,      0,    0,      0,      0,      1,      0,      0],
              [0,      0,      0,      0,      0,      0,    0,      0,      0,      0,      1,      0],
              [0,      0,      0,      0,      0,      0,    0,      0,      0,      0,      0,      1]])
 
-T_tri = np.sqrt(1./3.) * np.array([[1,         phase_term, phase_term,     0,          0,          0,          0,          0,          0,          0,                   0,              0], 
-                                   [phase_term, 1,          phase_term,     0,          0,          0,          0,          0,          0,          0,                      0,              0],
-                                   [phase_term, phase_term, 1         ,     0,          0,          0,          0,          0,          0,          0,                      0,              0],
-                                   [0,          0,          0         ,     1,          phase_term, phase_term, 0,          0,          0,          0,                      0,              0],
-                                   [0,          0,          0         ,     phase_term, 1,          phase_term, 0,          0,          0,          0,                      0,              0],
-                                   [0,          0,          0         ,     phase_term, phase_term, 1,          0,          0,          0,          0,                      0,              0],
-                                   [0,          0,          0         ,     0,          0,          0,          1,          phase_term, phase_term, 0,                      0,              0],
-                                   [0,          0,          0         ,     0,          0,          0,          phase_term, 1,          phase_term, 0,                      0,              0],
-                                   [0,          0,          0         ,     0,          0,          0,          phase_term, phase_term, 1,          0,                      0,              0],
+# tricoupler transfer matrix (all at once)
+T_tri = np.sqrt(1./3.) * np.array([[1,         phase_term_1, phase_term_1,     0,          0,          0,          0,          0,          0,          0,                   0,              0], 
+                                   [phase_term_1, 1,          phase_term_1,     0,          0,          0,          0,          0,          0,          0,                      0,              0],
+                                   [phase_term_1, phase_term_1, 1         ,     0,          0,          0,          0,          0,          0,          0,                      0,              0],
+                                   [0,          0,          0         ,     1,          phase_term_2, phase_term_2, 0,          0,          0,          0,                      0,              0],
+                                   [0,          0,          0         ,     phase_term_2, 1,          phase_term_2, 0,          0,          0,          0,                      0,              0],
+                                   [0,          0,          0         ,     phase_term_2, phase_term_2, 1,          0,          0,          0,          0,                      0,              0],
+                                   [0,          0,          0         ,     0,          0,          0,          1,          phase_term_3, phase_term_3, 0,                      0,              0],
+                                   [0,          0,          0         ,     0,          0,          0,          phase_term_3, 1,          phase_term_3, 0,                      0,              0],
+                                   [0,          0,          0         ,     0,          0,          0,          phase_term_3, phase_term_3, 1,          0,                      0,              0],
                                    [0,          0,          0         ,     0,          0,          0,          0,          0,          0,          np.sqrt(3.),         0,              0],
                                    [0,          0,          0         ,     0,          0,          0,          0,          0,          0,          0,                      np.sqrt(3.), 0],
                                    [0,          0,          0         ,     0,          0,          0,          0,          0,          0,          0,                      0,              np.sqrt(3.)]])
 
-# incoming complex wavefronts, before any splitting (note these are upstream of the achromatic phase shift; these phases are NOT the APS)
-amp_I = 1
-phase_I = 0
-amp_II = 1
-phase_II = 0
-amp_III = 1
-phase_III = 0
-
-phasor_in_I = amp_I * np.exp(1j * phase_I)
-phasor_in_II = amp_II * np.exp(1j * phase_II)
-phasor_in_III = amp_III * np.exp(1j * phase_III)
-
-a_in = np.array([phasor_in_I, phasor_in_II, phasor_in_III])
 
 phase_aps_list = []  # Initialize an empty list for phase_right values
 
@@ -127,9 +142,9 @@ for phase_aps_val in phase_aps_array:
                                 )
                         )**2
         
-        flux_output_matrix[:,i] = flux_output # Append flux_output to the list
+        flux_output_matrix[:,i] = flux_output # append flux_output to the list
         i+=1 # increment i
-        phase_aps_list.append(phase_aps_val)  # Append phase_right to the list
+        phase_aps_list.append(phase_aps_val)  # append phase to the list
 
         phase_aps_matrix = np.array(phase_aps_list)
         flux_output_matrix = np.array(flux_output_matrix)

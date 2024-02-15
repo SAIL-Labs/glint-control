@@ -108,3 +108,8 @@ class glintcontrol:
             pass
 
         pass
+
+
+    def sim_chip():
+
+        return 1

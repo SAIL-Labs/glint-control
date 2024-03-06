@@ -20,12 +20,20 @@ class MEMS():
         updated_data = reshaped_data.reshape(111)
         self.dmptt.set_data(updated_data)
         
-    def set_volt(self, actuator:int, voltage:float) -> None:
+    def set_volt_actuator(self, actuator:int, voltage:float) -> None:
         data = self.dmvolt.get_data()
         data[actuator] = voltage
         self.dmvolt.set_data(data)
-    
-    
+
+    def set_volt(self, segment:int, actuator:int, voltage:float) -> None:
+        data = self.dmvolt.get_data()
+        reshaped_data = data.reshape(37, 3)
+        reshaped_data[segment, actuator] = voltage
+        updated_data = reshaped_data.reshape(111)
+
+        
+        self.dmvolt.set_data(updated_data)
+
     def set_ptt_all(self, piston, tip, tilt) -> None:
         # make an ssertion statement of the datatype, range and shape of pisotn, tip, tilt
 
@@ -37,7 +45,6 @@ class MEMS():
         reshaped_data[:, 2] = tilt
 
         updated_data = reshaped_data.reshape(111)
-        print(updated_data)
         self.dmptt.set_data(updated_data)
     
     def set_volt_all(self, voltage) -> None:

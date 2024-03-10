@@ -1129,6 +1129,7 @@ class Ui_MainWindow(object):
                 checked_states.append(int(item.text()))
 
         return checked_states
+    
     def enableCellEditing(self, state, table):
         if state == 2:  # 2 corresponds to checked state
             self.table.setEditTriggers(QtWidgets.QTableWidget.AllEditTriggers)
@@ -1150,12 +1151,13 @@ class Ui_MainWindow(object):
             self.setTableEditable(table, False)
             # table.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
 
-    def eventFilter(self, source, event):
-        # Hide the list widget if a click occurs outside it
-        if source == self and event.type() == event.MouseButtonPress:
-            if not self.listWidget.geometry().contains(event.globalPos()):
-                self.listWidget.hide()
-        return super().eventFilter(source, event)
+    # def eventFilter(self, source, event):
+    #     # Hide the list widget if a click occurs outside it
+    #     if source == self and event.type() == event.MouseButtonPress:
+    #         if not self.listWidget.geometry().contains(event.globalPos()):
+    #             self.listWidget.hide()
+    #     return super().eventFilter(source, event)
+    
     def gettext(self):
         print(self.text_mountStepSize_urad.text())
 

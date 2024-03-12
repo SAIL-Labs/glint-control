@@ -1,12 +1,13 @@
 from GUI_ui import Ui_MainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
-
+from PyQt5.QtCore import Qt
+from apiMEMsControl import MEMS
 
 def preprocessing(gui):
     gui.list_segments.setVisible(False)
 
 
-def triggers(gui):
+def triggers(gui, mems, mount):
     # gui.pushButton_save.clicked.connect(gui.save)
 
     ### MEMs control buttons ###
@@ -14,46 +15,58 @@ def triggers(gui):
     
     ### Manual control buttons ###
     gui.pushButton_x_up.clicked.connect(
-        lambda state, gui=gui: x_up(gui))
+        lambda: x_up(gui, mount))
     gui.pushButton_y_up.clicked.connect(
-        lambda state, gui=gui: y_up(gui))
+        lambda: y_up(gui, mount))
     gui.pushButton_z_up.clicked.connect(
-        lambda state, gui=gui: z_up(gui))
+        lambda: z_up(gui))
     gui.pushButton_yaw_up.clicked.connect(
-        lambda state, gui=gui: yaw_up(gui))
+        lambda: yaw_up(gui))
     gui.pushButton_roll_up.clicked.connect(
-        lambda state, gui=gui: roll_up(gui))
+        lambda: roll_up(gui))
     gui.pushButton_pitch_up.clicked.connect(
-        lambda state, gui=gui: pitch_up(gui))
+        lambda: pitch_up(gui))
     gui.pushButton_x_down.clicked.connect(
-        lambda state, gui=gui: x_down(gui))
+        lambda: x_down(gui))
     gui.pushButton_y_down.clicked.connect(
-        lambda state, gui=gui: y_down(gui))
+        lambda: y_down(gui))
     gui.pushButton_z_down.clicked.connect(
-        lambda state, gui=gui: z_down(gui))
+        lambda: z_down(gui))
     gui.pushButton_yaw_down.clicked.connect(
-        lambda state, gui=gui: yaw_down(gui))
+        lambda: yaw_down(gui))
     gui.pushButton_roll_down.clicked.connect(
-        lambda state, gui=gui: roll_down(gui))
+        lambda: roll_down(gui))
+    gui. pushButton_piston_up.clicked.connect(
+        lambda: pist_up(gui))
+    gui.pushButton_piston_down.clicked.connect(
+        lambda: pist_down(gui))
+    gui.pushButton_tip_up.clicked.connect(
+        lambda: tip_up(gui))
+    gui.pushButton_tip_down.clicked.connect(
+        lambda: tip_down(gui))
+    gui.pushButton_tilt_up.clicked.connect(
+        lambda: tilt_up(gui))
+    gui.pushButton_tilt_down.clicked.connect(
+        lambda: tilt_down(gui))
+
     
 
     ### Toggle list widget ###
     gui.toggleButton_segments.clicked.connect(
-        lambda state, gui=gui: toggleList(gui))
+        lambda: toggleList(gui))
     
-    ### Live cam checkbox ###
-    gui.checkBox_livecam.stateChanged.connect(
-        lambda state, gui=gui: toggleLiveCam(gui, state))
+    # ### Live cam checkbox ###
+    # gui.checkBox_livecam.stateChanged.connect(
+    #     lambda state, gui=gui: toggleLiveCam(gui, state))
 
 
 
     ### Manual control checkboxes ###
     gui.checkBox_manualMEMs.stateChanged.connect(
-        lambda state, table=gui.tab_memsPosition: toggleMEMsEditable(gui, state))
+        lambda state: toggleMEMsEditable(gui, state))
     gui.checkBox_manualMount.stateChanged.connect(
-        lambda state, table=gui.table_mountPos_rpy: toggleMountEditable(gui, state))
+        lambda state: toggleMountEditable(gui, state))
 
-    
     
     ### Set step sizes ###
     gui.text_pistStepSize.textChanged.connect(
@@ -130,24 +143,148 @@ def on_item_changed(item):
         # If the entered value is not a float, prevent the change
         item.setText("0.000")
 
-def x_up(gui):
-    
-    row = [0]
-    col = 0
-    action = "up"
-    stepsize = gui.text_mountStepSize_um
-    table = gui.table_mountPos_xyz
-    manualCheckBox = gui.checkBox_manualMount
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+def check_stepSize(stepsize):
+    step = stepsize.text()
 
-def x_down(gui):
-    row = [0]
+    if step is None:
+        print("No step size given.")
+        return None
+
+    try:
+        step = float(step)
+        return step
+    except ValueError:
+        print("Step value is not a float.")
+        return None
+
+def get_checked_states(gui):
+    # Get the checked state of each item in the QListWidget
+    checked_states = []
+
+    for i in range(gui.list_segments.count()):
+        item = gui.list_segments.item(i)
+        if item.checkState() == Qt.Checked:
+            checked_states.append(int(item.text()))
+
+    return checked_states
+
+def pist_up(gui, mems):
+    checked_items = get_checked_states(gui)
+    stepsize = check_stepSize(gui.text_pistStepSize)
+    if stepsize is not None:
+        row = [r - 1 for r in checked_items]
+        col = 0
+        table = gui.tab_memsPosition
+
+        for r in row:
+            segment = r
+            pist = table.item(r, col).text()
+            tip = table.item(r, col + 1).text()
+            tilt = table.item(r, col + 2).text()
+            newpist = float(pist) + stepsize
+
+            mems.set_segment(segment, MEMS.DM_Piston, tip, tilt, True)
+            update_cell(table, r, col, newpist)
+
+'''
+Pseudocode:
+Get the segment(s)
+Get the current piston position
+Add the step size to the current position
+Set the new position
+'''
+def pist_down(gui):
+
+    checked_items = get_checked_states(gui)
+    row = [r - 1 for r in checked_items]
     col = 0
     action = "down"
-    stepsize = gui.text_mountStepSize_um
-    table = gui.table_mountPos_xyz
-    manualCheckBox = gui.checkBox_manualMount
+    stepsize = gui.text_pistStepSize
+    table = gui.tab_memsPosition
+    manualCheckBox = gui.checkBox_manualMEMs
     update_cell(action, stepsize, table, row, col, manualCheckBox)
+
+def tip_up(gui):
+
+    checked_items = get_checked_states(gui)
+    row = [r - 1 for r in checked_items]
+    col = 1
+    action = "up"
+    stepsize = gui.text_ttStepSize
+    table = gui.tab_memsPosition
+    manualCheckBox = gui.checkBox_manualMEMs
+    update_cell(action, stepsize, table, row, col, manualCheckBox)
+
+def tip_down(gui):
+
+    checked_items = get_checked_states(gui)
+    row = [r - 1 for r in checked_items]
+    col = 1
+    action = "down"
+    stepsize = gui.text_ttStepSize
+    table = gui.tab_memsPosition
+    manualCheckBox = gui.checkBox_manualMEMs
+    update_cell(action, stepsize, table, row, col, manualCheckBox)
+
+def tilt_up(gui):
+
+    checked_items = get_checked_states(gui)
+    row = [r - 1 for r in checked_items]
+    col = 2
+    action = "up"
+    stepsize = gui.text_ttStepSize
+    table = gui.tab_memsPosition
+    manualCheckBox = gui.checkBox_manualMEMs
+    update_cell(action, stepsize, table, row, col, manualCheckBox)
+
+def tilt_down(gui):
+
+    checked_items = get_checked_states(gui)
+    row = [r - 1 for r in checked_items]
+    col = 2
+    action = "down"
+    stepsize = gui.text_ttStepSize
+    table = gui.tab_memsPosition
+    manualCheckBox = gui.checkBox_manualMEMs
+    update_cell(action, stepsize, table, row, col, manualCheckBox)
+
+
+def x_up(gui, mount):
+    stepsize = check_stepSize(gui.text_mountStepSize_um)
+    if stepsize is not None:
+        table = gui.table_mountPos_xyz
+        row = [0]
+        col = 0
+        axis = 4
+
+        pos = mount.get_pos(axis)
+        newpos = pos + stepsize
+        mount.set_pos(axis, newpos)
+        
+        update_cell(table, row, col, newpos)
+
+        '''
+        Pseudocode:
+        Get the current mount position
+        Add the step size to the current position
+        Set the new position
+        '''
+    
+
+def x_down(gui, mount):
+    stepsize = check_stepSize(gui.text_mountStepSize_um)
+    if stepsize is not None:
+        table = gui.table_mountPos_xyz
+        row = [0]
+        col = 0
+        axis = 4
+
+        pos = mount.get_pos(axis)
+        newpos = pos - stepsize
+        mount.set_pos(axis, newpos)
+        
+        update_cell(table, row, col, newpos)
+
 
 def y_up(gui):
     row = [0]
@@ -251,46 +388,49 @@ def yaw_down(gui):
     update_cell(action, stepsize, table, row, col, manualCheckBox)
 
 
-def update_cell(action, stepsize, table, row, col, manualCheckBox):
+def update_cell(table, row, col, value):
+    table.setItem(row, col, value)
 
-    step = stepsize.text()
+# def update_cell(action, stepsize, table, row, col, manualCheckBox):
 
-    if not manualCheckBox.isChecked():
-        print("Manual control not enabled.")
-        return
+#     step = stepsize.text()
 
-
-    if step is not None and manualCheckBox.isChecked():
-        try:
-            step_value = float(step)
-
-            for r in row:
-                # Check if the cell value to be changed is even a float
-                try:
-                    item = table.item(r, col)
-
-                    if item is None:  # If nothing is in the cell
-                        emptycell_value = 0.000
-                        item = QtWidgets.QTableWidgetItem(f"{emptycell_value}")
-
-                    cell_value = float(item.text())
-
-                    if action == "down":
-                        new_cell_value = cell_value - step_value
-                    elif action == "up":
-                        new_cell_value = cell_value + step_value
-                    else:
-                        print("Invalid action.")
-                        new_cell_value = cell_value
-
-                    new_item = QtWidgets.QTableWidgetItem("{:.3f}".format(new_cell_value))
+#     if not manualCheckBox.isChecked():
+#         print("Manual control not enabled.")
+#         return
 
 
-                    table.setItem(r, col, new_item)
+#     if step is not None and manualCheckBox.isChecked():
+#         try:
+#             step_value = float(step)
 
-                except ValueError:
-                    print("Cell value is not a float.")
-        except ValueError:
-            print("Step value is not a float.")
-    else:
-        print("No step size given.")
+#             for r in row:
+#                 # Check if the cell value to be changed is even a float
+#                 try:
+#                     item = table.item(r, col)
+
+#                     if item is None:  # If nothing is in the cell
+#                         emptycell_value = 0.000
+#                         item = QtWidgets.QTableWidgetItem(f"{emptycell_value}")
+
+#                     cell_value = float(item.text())
+
+#                     if action == "down":
+#                         new_cell_value = cell_value - step_value
+#                     elif action == "up":
+#                         new_cell_value = cell_value + step_value
+#                     else:
+#                         print("Invalid action.")
+#                         new_cell_value = cell_value
+
+#                     new_item = QtWidgets.QTableWidgetItem("{:.3f}".format(new_cell_value))
+
+
+#                     table.setItem(r, col, new_item)
+
+#                 except ValueError:
+#                     print("Cell value is not a float.")
+#         except ValueError:
+#             print("Step value is not a float.")
+#     else:
+#         print("No step size given.")

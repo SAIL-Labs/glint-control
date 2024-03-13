@@ -1,16 +1,16 @@
-import sys
-sys.path.append('/home/scexao/steph/control-code')
+# import sys
+# sys.path.append('/home/scexao/steph/control-code')
 
-import apiMEMsControl 
-import chipMountControl 
+# import apiMEMsControl 
+# import chipMountControl 
 
 from control_buttons_ui import Ui_MainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 
-DM_Piston = apiMEMsControl.DM_Piston
-DM_XTilt = apiMEMsControl.DM_XTilt
-DM_YTilt = apiMEMsControl.DM_YTilt
+# DM_Piston = apiMEMsControl.DM_Piston
+# DM_XTilt = apiMEMsControl.DM_XTilt
+# DM_YTilt = apiMEMsControl.DM_YTilt
 
 def preprocessing(gui):
     gui.list_segments.setVisible(False)
@@ -31,8 +31,8 @@ def triggers(gui):
         lambda: getSpeed(gui, mount))
     
     ### Segment list ###
-    # Connect the line edit's focus events to clear and restore the default text
-    gui.text_segments.focusInEvent = lambda event: gui.text_segments.setText('')
+    # # Replace the original focusInEvent with the new one
+    gui.text_segments.focusInEvent = lambda event: focusInEvent(gui)
     gui.text_segments.focusOutEvent = lambda event: get_segments(gui.text_segments.text(), gui.text_segments)
 
     # gui.text_segments.textChanged.connect(
@@ -229,24 +229,40 @@ def get_checked_states(gui):
     return checked_states
 
 def get_segments(text, le):
-
-    default = "E.g. [0, 4, 8]"
+    '''
+    Copilot worte this code
+    '''
+    default = "E.g. 0, 4, 8"
 
     if not text:
         le.setText(default)
-        
+    else:
+        try:
+            # Check if the string is in the format of an array
+            segments = [int(s.strip()) for s in text.split(',')]
+            print(segments)
+            # If the format is correct, set the text to the input text
+            le.setText(text)
+        except ValueError:
+            le.setText(default)
+            print("Invalid format. Please enter numbers separated by commas.")
 
+# Modify the focusInEvent to not clear the text if it's in the correct format
+def focusInEvent(gui):
+    '''
+    Copilot wrote this code
+    '''
+    text = gui.text_segments.text()
     try:
         # Check if the string is in the format of an array
-        segments = [int(s) for s in text.split(',')]
-        print(segments)
-        
+        segments = [int(s.strip()) for s in text.split(',')]
+        # If the format is correct, do not clear the text
     except ValueError:
-        le.setText(default)
-        print("Invalid format. Please enter numbers separated by commas.")
-        
+        # If the format is incorrect, clear the text
+        gui.text_segments.setText('')
 
-#
+
+        
 
 def pist_up(gui, mems):
     checked_items = get_checked_states(gui)

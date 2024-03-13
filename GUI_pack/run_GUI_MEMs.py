@@ -1,9 +1,9 @@
 # from GUI_ui import Ui_MainWindow
-import sys
-sys.path.append('/home/scexao/steph/control-code')
+# import sys
+# sys.path.append('/home/scexao/steph/control-code')
 
-import apiMEMsControl 
-import chipMountControl 
+# import apiMEMsControl 
+# import chipMountControl 
 
 from control_buttons_ui import Ui_MainWindow
 from GUI_triggers_MEMs import triggers, preprocessing

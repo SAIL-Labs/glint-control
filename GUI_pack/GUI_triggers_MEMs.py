@@ -1,90 +1,151 @@
-from GUI_ui import Ui_MainWindow
+import sys
+sys.path.append('/home/scexao/steph/control-code')
+
+import apiMEMsControl 
+import chipMountControl 
+
+from control_buttons_ui import Ui_MainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
-from apiMEMsControl import MEMS
+
+DM_Piston = apiMEMsControl.DM_Piston
+DM_XTilt = apiMEMsControl.DM_XTilt
+DM_YTilt = apiMEMsControl.DM_YTilt
 
 def preprocessing(gui):
     gui.list_segments.setVisible(False)
 
 
-def triggers(gui, mems, mount):
+def triggers(gui):
+
+    '''
+    Test we have connection with MEMs and mount
+    '''
+    gui.pushButton_numActuators.clicked.connect(
+        lambda: numActuators(gui, mems))
+    
+    gui.pushButton_setSpeed.clicked.connect(
+        lambda: setSpeed(gui, mount))
+
+    gui.pushButton_getSpeed.clicked.connect(
+        lambda: getSpeed(gui, mount))
+    
+    ### Segment list ###
+    # Connect the line edit's focus events to clear and restore the default text
+    gui.text_segments.focusInEvent = lambda event: gui.text_segments.setText('')
+    gui.text_segments.focusOutEvent = lambda event: get_segments(gui.text_segments.text(), gui.text_segments)
+
+    # gui.text_segments.textChanged.connect(
+    #     lambda text, le=gui.text_segments: get_segments(text, le))
+
+    # gui.pushButton_numActuators.clicked.connect(
+    #     lambda: print('hi'))
+    
     # gui.pushButton_save.clicked.connect(gui.save)
 
-    ### MEMs control buttons ###
-    gui.pushButton_flattenMEMs.clicked.connect(flatten)
+    # ### MEMs control buttons ###
+    # gui.pushButton_flattenMEMs.clicked.connect(flatten)
+
+
+    # ### Manual control buttons ###
+    # gui.pushButton_x_up.clicked.connect(
+    #     lambda: x_up(gui, mount))
+    # gui.pushButton_x_down.clicked.connect(
+    #     lambda: x_down(gui, mount))
+    # gui.pushButton_y_up.clicked.connect(
+    #     lambda: y_up(gui, mount))
+    # gui.pushButton_y_down.clicked.connect(
+    #     lambda: y_down(gui, mount))
+    # gui.pushButton_z_up.clicked.connect(
+    #     lambda: z_up(gui, mount))
+    # gui.pushButton_z_down.clicked.connect(
+    #     lambda: z_down(gui, mount))
+    # gui.pushButton_yaw_up.clicked.connect(
+    #     lambda: yaw_up(gui, mount))
+    # gui.pushButton_yaw_down.clicked.connect(
+    #     lambda: yaw_down(gui, mount))
+    # gui.pushButton_roll_up.clicked.connect(
+    #     lambda: roll_up(gui, mount))
+    # gui.pushButton_roll_down.clicked.connect(
+    #     lambda: roll_down(gui, mount))
+    # gui.pushButton_pitch_up.clicked.connect(
+    #     lambda: pitch_up(gui, mount))
+    # gui.pushButton_pitch_down.clicked.connect(  
+    #     lambda: pitch_down(gui, mount))
     
-    ### Manual control buttons ###
-    gui.pushButton_x_up.clicked.connect(
-        lambda: x_up(gui, mount))
-    gui.pushButton_y_up.clicked.connect(
-        lambda: y_up(gui, mount))
-    gui.pushButton_z_up.clicked.connect(
-        lambda: z_up(gui))
-    gui.pushButton_yaw_up.clicked.connect(
-        lambda: yaw_up(gui))
-    gui.pushButton_roll_up.clicked.connect(
-        lambda: roll_up(gui))
-    gui.pushButton_pitch_up.clicked.connect(
-        lambda: pitch_up(gui))
-    gui.pushButton_x_down.clicked.connect(
-        lambda: x_down(gui))
-    gui.pushButton_y_down.clicked.connect(
-        lambda: y_down(gui))
-    gui.pushButton_z_down.clicked.connect(
-        lambda: z_down(gui))
-    gui.pushButton_yaw_down.clicked.connect(
-        lambda: yaw_down(gui))
-    gui.pushButton_roll_down.clicked.connect(
-        lambda: roll_down(gui))
-    gui. pushButton_piston_up.clicked.connect(
-        lambda: pist_up(gui))
-    gui.pushButton_piston_down.clicked.connect(
-        lambda: pist_down(gui))
-    gui.pushButton_tip_up.clicked.connect(
-        lambda: tip_up(gui))
-    gui.pushButton_tip_down.clicked.connect(
-        lambda: tip_down(gui))
-    gui.pushButton_tilt_up.clicked.connect(
-        lambda: tilt_up(gui))
-    gui.pushButton_tilt_down.clicked.connect(
-        lambda: tilt_down(gui))
+    
+    # gui. pushButton_piston_up.clicked.connect(
+    #     lambda: pist_up(gui, mems))
+    # gui.pushButton_piston_down.clicked.connect(
+    #     lambda: pist_down(gui,  mems))
+    # gui.pushButton_tip_up.clicked.connect(
+    #     lambda: tip_up(gui, mems))
+    # gui.pushButton_tip_down.clicked.connect(
+    #     lambda: tip_down(gui, mems))
+    # gui.pushButton_tilt_up.clicked.connect(
+    #     lambda: tilt_up(gui, mems))
+    # gui.pushButton_tilt_down.clicked.connect(
+    #     lambda: tilt_down(gui, mems))
 
     
 
-    ### Toggle list widget ###
-    gui.toggleButton_segments.clicked.connect(
-        lambda: toggleList(gui))
+   
     
-    # ### Live cam checkbox ###
-    # gui.checkBox_livecam.stateChanged.connect(
-    #     lambda state, gui=gui: toggleLiveCam(gui, state))
+    # # ### Live cam checkbox ###
+    # # gui.checkBox_livecam.stateChanged.connect(
+    # #     lambda state, gui=gui: toggleLiveCam(gui, state))
 
 
 
-    ### Manual control checkboxes ###
-    gui.checkBox_manualMEMs.stateChanged.connect(
-        lambda state: toggleMEMsEditable(gui, state))
-    gui.checkBox_manualMount.stateChanged.connect(
-        lambda state: toggleMountEditable(gui, state))
+    # ### Manual control checkboxes ###
+    # gui.checkBox_manualMEMs.stateChanged.connect(
+    #     lambda state: toggleMEMsEditable(gui, state))
+    # gui.checkBox_manualMount.stateChanged.connect(
+    #     lambda state: toggleMountEditable(gui, state))
 
+    
     
     ### Set step sizes ###
-    gui.text_pistStepSize.textChanged.connect(
-        lambda text, le=gui.text_pistStepSize: on_text_changed(text, le))
-    gui.text_ttStepSize.textChanged.connect(
-        lambda text, le=gui.text_ttStepSize: on_text_changed(text, le))
-    gui.text_mountStepSize_urad.textChanged.connect(
-        lambda text, le=gui.text_mountStepSize_urad: on_text_changed(text, le))
-    gui.text_mountStepSize_um.textChanged.connect(
-        lambda text, le=gui.text_mountStepSize_um: on_text_changed(text, le))
+    # gui.text_pistStepSize.textChanged.connect(
+    #     lambda text, le=gui.text_pistStepSize: on_text_changed(text, le))
+    # gui.text_ttStepSize.textChanged.connect(
+    #     lambda text, le=gui.text_ttStepSize: on_text_changed(text, le))
+    # gui.text_mountStepSize_urad.textChanged.connect(
+    #     lambda text, le=gui.text_mountStepSize_urad: on_text_changed(text, le))
+    # gui.text_mountStepSize_um.textChanged.connect(
+    #     lambda text, le=gui.text_mountStepSize_um: on_text_changed(text, le))
 
-    gui.table_mountPos_rpy.itemChanged.connect(on_item_changed)
-    gui.table_mountPos_xyz.itemChanged.connect(on_item_changed)
-    gui.tab_memsPosition.itemChanged.connect(on_item_changed)
+    # gui.table_mountPos_rpy.itemChanged.connect(on_item_changed)
+    # gui.table_mountPos_xyz.itemChanged.connect(on_item_changed)
+    # gui.tab_memsPosition.itemChanged.connect(on_item_changed)
 
-def flatten():
+
+    '''
+    Archived triggers
+    '''
+    # ### Toggle list widget ###
+    # gui.toggleButton_segments.clicked.connect(
+    #     lambda: toggleList(gui))
+
+def numActuators(gui, mems):
+    num_actuators = mems.num_actuators()
+    print(num_actuators)
+    gui.label_numActuators.setText(str(num_actuators))
+
+def setSpeed(gui, mount):
+    speed = int(gui.text_setSpeed.text())
+    axis = 1
+    mount.set_speed(axis, speed)
+
+def getSpeed(gui, mount):
+    axis = 1
+    speed = mount.get_speed(axis)
+    gui.label_getSpeed.setText(str(speed))
+
+def flatten(gui, mems):
+    mems.flatten()
+
     
-    print("Flatten MEMs")
 
 def toggleList(gui):
     # Toggle the visibility of the list widget
@@ -103,7 +164,6 @@ def toggleMEMsEditable(gui, state):
     This could be generalised but my brain hurts
     '''
     if state == 2:  # 2 corresponds to checked state
-
         gui.widget_manualMEMs_inner.setEnabled(True)
         gui.tab_memsPosition.setEditTriggers(QtWidgets.QTableWidget.AllEditTriggers)
     else:
@@ -168,6 +228,26 @@ def get_checked_states(gui):
 
     return checked_states
 
+def get_segments(text, le):
+
+    default = "E.g. [0, 4, 8]"
+
+    if not text:
+        le.setText(default)
+        
+
+    try:
+        # Check if the string is in the format of an array
+        segments = [int(s) for s in text.split(',')]
+        print(segments)
+        
+    except ValueError:
+        le.setText(default)
+        print("Invalid format. Please enter numbers separated by commas.")
+        
+
+#
+
 def pist_up(gui, mems):
     checked_items = get_checked_states(gui)
     stepsize = check_stepSize(gui.text_pistStepSize)
@@ -178,12 +258,12 @@ def pist_up(gui, mems):
 
         for r in row:
             segment = r
-            pist = table.item(r, col).text()
-            tip = table.item(r, col + 1).text()
-            tilt = table.item(r, col + 2).text()
-            newpist = float(pist) + stepsize
+            pist = float(table.item(r, col).text())
+            tip = float(table.item(r, col + 1).text())
+            tilt = float(table.item(r, col + 2).text())
+            newpist = pist + stepsize
 
-            mems.set_segment(segment, MEMS.DM_Piston, tip, tilt, True)
+            mems.set_segment(segment, DM_Piston, newpist, tip, tilt, True)
             update_cell(table, r, col, newpist)
 
 '''
@@ -193,60 +273,102 @@ Get the current piston position
 Add the step size to the current position
 Set the new position
 '''
-def pist_down(gui):
+def pist_down(gui, mems):
+    checked_items = get_checked_states(gui)
+    stepsize = check_stepSize(gui.text_pistStepSize)
+    if stepsize is not None:
+        row = [r - 1 for r in checked_items]
+        col = 0
+        table = gui.tab_memsPosition
+
+        for r in row:
+            segment = r
+            pist = float(table.item(r, col).text())
+            tip = float(table.item(r, col + 1).text())
+            tilt = float(table.item(r, col + 2).text())
+            newpist = pist - stepsize
+
+            mems.set_segment(segment, DM_Piston, newpist, tip, tilt, True)
+            update_cell(table, r, col, newpist)
+
+def tip_up(gui, mems):
 
     checked_items = get_checked_states(gui)
-    row = [r - 1 for r in checked_items]
-    col = 0
-    action = "down"
-    stepsize = gui.text_pistStepSize
-    table = gui.tab_memsPosition
-    manualCheckBox = gui.checkBox_manualMEMs
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+    stepsize = check_stepSize(gui.text_pistStepSize)
+    if stepsize is not None:
+        row = [r - 1 for r in checked_items]
+        col = 1
+        table = gui.tab_memsPosition
 
-def tip_up(gui):
+        for r in row:
+            segment = r
+            pist = float(table.item(r, col - 1).text())
+            tip = float(table.item(r, col).text())
+            tilt = float(table.item(r, col + 1).text())
+            newtip = tip + stepsize
+
+            mems.set_segment(segment, DM_XTilt, pist, newtip, tilt, True)
+            update_cell(table, r, col, newtip)
+
+def tip_down(gui, mems):
+    
+    checked_items = get_checked_states(gui)
+    stepsize = check_stepSize(gui.text_pistStepSize)
+    if stepsize is not None:
+        row = [r - 1 for r in checked_items]
+        col = 1
+        table = gui.tab_memsPosition
+
+        for r in row:
+            segment = r
+            pist = float(table.item(r, col - 1).text())
+            tip = float(table.item(r, col).text())
+            tilt = float(table.item(r, col + 1).text())
+            newtip = tip - stepsize
+
+            mems.set_segment(segment, DM_XTilt, pist, newtip, tilt, True)
+            update_cell(table, r, col, newtip)
+
+def tilt_up(gui, mems):
+    
+    checked_items = get_checked_states(gui)
+    stepsize = check_stepSize(gui.text_pistStepSize)
+    if stepsize is not None:
+        row = [r - 1 for r in checked_items]
+        col = 2
+        table = gui.tab_memsPosition
+
+        for r in row:
+            segment = r
+            pist = float(table.item(r, col - 2).text())
+            tip = float(table.item(r, col - 1).text())
+            tilt = float(table.item(r, col).text())
+            newtilt = tilt + stepsize
+
+            mems.set_segment(segment, DM_YTilt, pist, tip, newtilt, True)
+            update_cell(table, r, col, newtilt)
+
+
+def tilt_down(gui, mems):
 
     checked_items = get_checked_states(gui)
-    row = [r - 1 for r in checked_items]
-    col = 1
-    action = "up"
-    stepsize = gui.text_ttStepSize
-    table = gui.tab_memsPosition
-    manualCheckBox = gui.checkBox_manualMEMs
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+    stepsize = check_stepSize(gui.text_pistStepSize)
+    if stepsize is not None:
+        row = [r - 1 for r in checked_items]
+        col = 2
+        table = gui.tab_memsPosition
 
-def tip_down(gui):
+        for r in row:
+            segment = r
+            pist = float(table.item(r, col - 2).text())
+            tip = float(table.item(r, col - 1).text())
+            tilt = float(table.item(r, col).text())
+            newtilt = tilt - stepsize
 
-    checked_items = get_checked_states(gui)
-    row = [r - 1 for r in checked_items]
-    col = 1
-    action = "down"
-    stepsize = gui.text_ttStepSize
-    table = gui.tab_memsPosition
-    manualCheckBox = gui.checkBox_manualMEMs
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+            mems.set_segment(segment, DM_YTilt, pist, tip, newtilt, True)
 
-def tilt_up(gui):
+            update_cell(table, r, col, newtilt)
 
-    checked_items = get_checked_states(gui)
-    row = [r - 1 for r in checked_items]
-    col = 2
-    action = "up"
-    stepsize = gui.text_ttStepSize
-    table = gui.tab_memsPosition
-    manualCheckBox = gui.checkBox_manualMEMs
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
-
-def tilt_down(gui):
-
-    checked_items = get_checked_states(gui)
-    row = [r - 1 for r in checked_items]
-    col = 2
-    action = "down"
-    stepsize = gui.text_ttStepSize
-    table = gui.tab_memsPosition
-    manualCheckBox = gui.checkBox_manualMEMs
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
 
 
 def x_up(gui, mount):
@@ -261,7 +383,8 @@ def x_up(gui, mount):
         newpos = pos + stepsize
         mount.set_pos(axis, newpos)
         
-        update_cell(table, row, col, newpos)
+        updated_pos = mount.get_pos(axis)
+        update_cell(table, row, col, updated_pos)
 
         '''
         Pseudocode:
@@ -283,154 +406,178 @@ def x_down(gui, mount):
         newpos = pos - stepsize
         mount.set_pos(axis, newpos)
         
-        update_cell(table, row, col, newpos)
+        updated_pos = mount.get_pos(axis)
+        update_cell(table, row, col, updated_pos)
 
 
-def y_up(gui):
-    row = [0]
-    col = 1
-    action = "up"
-    stepsize = gui.text_mountStepSize_um
-    table = gui.table_mountPos_xyz
-    manualCheckBox = gui.checkBox_manualMount
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+def y_up(gui, mount):
 
-def y_down(gui):
-    row = [0]
-    col = 1
-    action = "down"
-    stepsize = gui.text_mountStepSize_um
-    table = gui.table_mountPos_xyz
-    manualCheckBox = gui.checkBox_manualMount
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+    stepsize = check_stepSize(gui.text_mountStepSize_um)
+    if stepsize is not None:
+        table = gui.table_mountPos_xyz
+        row = [0]
+        col = 1
+        axis = 6
 
-def z_up(gui):
-    row = [0]
-    col = 2
-    action = "up"
-    stepsize = gui.text_mountStepSize_um
-    table = gui.table_mountPos_xyz
-    manualCheckBox = gui.checkBox_manualMount
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+        pos = mount.get_pos(axis)
+        newpos = pos + stepsize
+        mount.set_pos(axis, newpos)
+        
+        updated_pos = mount.get_pos(axis)
+        update_cell(table, row, col, updated_pos)
 
-def z_down(gui):
-    row = [0]
-    col = 2
-    action = "down"
-    stepsize = gui.text_mountStepSize_um
-    table = gui.table_mountPos_xyz
-    manualCheckBox = gui.checkBox_manualMount
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+def y_down(gui, mount):
+    
+    stepsize = check_stepSize(gui.text_mountStepSize_um)
+    if stepsize is not None:
+        table = gui.table_mountPos_xyz
+        row = [0]
+        col = 1
+        axis = 6
 
+        pos = mount.get_pos(axis)
+        newpos = pos - stepsize
+        mount.set_pos(axis, newpos)
+        
+        updated_pos = mount.get_pos(axis)
+        update_cell(table, row, col, updated_pos)
 
-def roll_up(gui):
-    row = [0]
-    col = 0
-    action = "up"
-    stepsize = gui.text_mountStepSize_urad
-    table = gui.table_mountPos_rpy
-    manualCheckBox = gui.checkBox_manualMount
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+def z_up(gui, mount):
+    
+    stepsize = check_stepSize(gui.text_mountStepSize_um)
+    if stepsize is not None:
+        table = gui.table_mountPos_xyz
+        row = [0]
+        col = 2
+        axis = 5
 
+        pos = mount.get_pos(axis)
+        newpos = pos + stepsize
+        mount.set_pos(axis, newpos)
+        
+        updated_pos = mount.get_pos(axis)
+        update_cell(table, row, col, updated_pos)
 
-def roll_down(gui):
-    # if gui.checkBox_manualMount.isChecked():
-    row = [0]
-    col = 0
-    action = "down"
-    stepsize = gui.text_mountStepSize_urad
-    table = gui.table_mountPos_rpy
-    manualCheckBox = gui.checkBox_manualMount
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+def z_down(gui, mount):
+    
+    stepsize = check_stepSize(gui.text_mountStepSize_um)
+    if stepsize is not None:
+        table = gui.table_mountPos_xyz
+        row = [0]
+        col = 2
+        axis = 5
 
-
-def pitch_up(gui):
-    # if gui.checkBox_manualMount.isChecked():
-    row = [0]
-    col = 1
-    action = "up"
-    stepsize = gui.text_mountStepSize_urad
-    table = gui.table_mountPos_rpy
-    manualCheckBox = gui.checkBox_manualMount
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+        pos = mount.get_pos(axis)
+        newpos = pos - stepsize
+        mount.set_pos(axis, newpos)
+        
+        updated_pos = mount.get_pos(axis)
+        update_cell(table, row, col, updated_pos)
 
 
-def pitch_down(gui):
-    # if gui.checkBox_manualMount.isChecked():
-    row = [0]
-    col = 1
-    action = "down"
-    stepsize = gui.text_mountStepSize_urad
-    table = gui.table_mountPos_rpy
-    manualCheckBox = gui.checkBox_manualMount
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+def roll_up(gui, mount):
+    
+    stepsize = check_stepSize(gui.text_mountStepSize_urad)
+    if stepsize is not None:
+        table = gui.table_mountPos_rpy
+        row = [0]
+        col = 0
+        axis = 2
+
+        pos = mount.get_pos(axis)
+        newpos = pos + stepsize
+        mount.set_pos(axis, newpos)
+        
+        updated_pos = mount.get_pos(axis)
+        update_cell(table, row, col, updated_pos)
 
 
-def yaw_up(gui):
-    # if gui.checkBox_manualMount.isChecked():
-    row = [0]
-    col = 2
-    action = "up"
-    stepsize = gui.text_mountStepSize_urad
-    table = gui.table_mountPos_rpy
-    manualCheckBox = gui.checkBox_manualMount
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
+def roll_down(gui, mount):
+    
+    stepsize = check_stepSize(gui.text_mountStepSize_urad)
+    if stepsize is not None:
+        table = gui.table_mountPos_rpy
+        row = [0]
+        col = 0
+        axis = 2
+
+        pos = mount.get_pos(axis)
+        newpos = pos - stepsize
+        mount.set_pos(axis, newpos)
+        
+        updated_pos = mount.get_pos(axis)
+        update_cell(table, row, col, updated_pos)
 
 
-def yaw_down(gui):
+def pitch_up(gui, mount):
+    
+    stepsize = check_stepSize(gui.text_mountStepSize_urad)
+    if stepsize is not None:
+        table = gui.table_mountPos_rpy
+        row = [0]
+        col = 1
+        axis = 1
 
-    row = [0]
-    col = 2
-    action = "down"
-    stepsize = gui.text_mountStepSize_urad
-    table = gui.table_mountPos_rpy
-    manualCheckBox = gui.checkBox_manualMount
-    update_cell(action, stepsize, table, row, col, manualCheckBox)
-
-
-def update_cell(table, row, col, value):
-    table.setItem(row, col, value)
-
-# def update_cell(action, stepsize, table, row, col, manualCheckBox):
-
-#     step = stepsize.text()
-
-#     if not manualCheckBox.isChecked():
-#         print("Manual control not enabled.")
-#         return
+        pos = mount.get_pos(axis)
+        newpos = pos + stepsize
+        mount.set_pos(axis, newpos)
+        
+        updated_pos = mount.get_pos(axis)
+        update_cell(table, row, col, updated_pos)
 
 
-#     if step is not None and manualCheckBox.isChecked():
-#         try:
-#             step_value = float(step)
+def pitch_down(gui, mount):
+    
+    stepsize = check_stepSize(gui.text_mountStepSize_urad)
+    if stepsize is not None:
+        table = gui.table_mountPos_rpy
+        row = [0]
+        col = 1
+        axis = 1
 
-#             for r in row:
-#                 # Check if the cell value to be changed is even a float
-#                 try:
-#                     item = table.item(r, col)
-
-#                     if item is None:  # If nothing is in the cell
-#                         emptycell_value = 0.000
-#                         item = QtWidgets.QTableWidgetItem(f"{emptycell_value}")
-
-#                     cell_value = float(item.text())
-
-#                     if action == "down":
-#                         new_cell_value = cell_value - step_value
-#                     elif action == "up":
-#                         new_cell_value = cell_value + step_value
-#                     else:
-#                         print("Invalid action.")
-#                         new_cell_value = cell_value
-
-#                     new_item = QtWidgets.QTableWidgetItem("{:.3f}".format(new_cell_value))
+        pos = mount.get_pos(axis)
+        newpos = pos - stepsize
+        mount.set_pos(axis, newpos)
+        
+        updated_pos = mount.get_pos(axis)
+        update_cell(table, row, col, updated_pos)
 
 
-#                     table.setItem(r, col, new_item)
+def yaw_up(gui, mount):
+    
+    stepsize = check_stepSize(gui.text_mountStepSize_urad)
+    if stepsize is not None:
+        table = gui.table_mountPos_rpy
+        row = [0]
+        col = 2
+        axis = 3
 
-#                 except ValueError:
-#                     print("Cell value is not a float.")
-#         except ValueError:
-#             print("Step value is not a float.")
-#     else:
-#         print("No step size given.")
+        pos = mount.get_pos(axis)
+        newpos = pos + stepsize
+        mount.set_pos(axis, newpos)
+        
+        updated_pos = mount.get_pos(axis)
+        update_cell(table, row, col, updated_pos)
+
+
+def yaw_down(gui, mount):
+
+    stepsize = check_stepSize(gui.text_mountStepSize_urad)
+    if stepsize is not None:
+        table = gui.table_mountPos_rpy
+        row = [0]
+        col = 2
+        axis = 3
+
+        pos = mount.get_pos(axis)
+        newpos = pos - stepsize
+        mount.set_pos(axis, newpos)
+
+        # should update cell by calling getpos again
+        updatedpos = mount.get_pos(axis)
+        update_cell(table, row, col, updatedpos)
+
+
+def update_cell(table, rows, col, value):
+    for r in rows:
+        table.setItem(r, col, value)

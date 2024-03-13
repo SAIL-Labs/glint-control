@@ -345,9 +345,9 @@ class Mount:
         self.f.writelines(line)
 
 
-if __name__ == "__main__":
-    mount = Mount('/dev/serial/by-id/usb-SURUGA_SEIKI_SURUGA_SEIKI_DS102-if00-port0', 38400)
-    # mount = Mount('/dev/ttyUSB0', 38400)
+# if __name__ == "__main__":
+#     mount = Mount('/dev/serial/by-id/usb-SURUGA_SEIKI_SURUGA_SEIKI_DS102-if00-port0', 38400)
+#     # mount = Mount('/dev/ttyUSB0', 38400)
     
     
 

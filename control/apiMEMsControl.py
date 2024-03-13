@@ -59,11 +59,11 @@ class MEMS():
     
 
 
-if __name__ == "__main__":
-    mems = MEMS('32AW038#027')
-    mems.openDM()
-    print("Number of actuators:", mems.num_actuators())
-    mems.closeDM()
-    print('DM opened and closed successfully')
+# if __name__ == "__main__":
+#     mems = MEMS('32AW038#027')
+#     mems.openDM()
+#     print("Number of actuators:", mems.num_actuators())
+#     mems.closeDM()
+#     print('DM opened and closed successfully')
 
     

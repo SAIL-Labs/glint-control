@@ -4,6 +4,10 @@ sys.path.append('/home/scexao/steph/bmc/setup_files')
 import bmc
 import numpy as np
 
+DM_Piston = bmc.DM_Piston
+DM_XTilt = bmc.DM_XTilt
+DM_YTilt = bmc.DM_YTilt
+
 class MEMS():
     def __init__(self, serial) -> None:
         self.dm = bmc.BmcDm()

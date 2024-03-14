@@ -1,22 +1,22 @@
-# import sys
-# sys.path.append('/home/scexao/steph/control-code')
+import sys
+sys.path.append('/home/scexao/steph/control-code')
 
-# import apiMEMsControl 
-# import chipMountControl 
+import apiMEMsControl 
+import chipMountControl 
 
 from control_buttons_ui import Ui_MainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 
-# DM_Piston = apiMEMsControl.DM_Piston
-# DM_XTilt = apiMEMsControl.DM_XTilt
-# DM_YTilt = apiMEMsControl.DM_YTilt
+DM_Piston = apiMEMsControl.DM_Piston
+DM_XTilt = apiMEMsControl.DM_XTilt
+DM_YTilt = apiMEMsControl.DM_YTilt
 
 def preprocessing(gui):
     gui.list_segments.setVisible(False)
 
 
-def triggers(gui):
+def triggers(gui, mems, mount):
 
     '''
     Test we have connection with MEMs and mount
@@ -30,10 +30,16 @@ def triggers(gui):
     gui.pushButton_getSpeed.clicked.connect(
         lambda: getSpeed(gui, mount))
     
+    gui.pushButton_setActuator.clicked.connect(
+        lambda: setActuator(gui, mems))
+    
+    gui.pushButton_getActuator.clicked.connect(
+        lambda: getActuator(gui, mems))
+    
     ### Segment list ###
     # # Replace the original focusInEvent with the new one
-    gui.text_segments.focusInEvent = lambda event: focusInEvent(gui)
-    gui.text_segments.focusOutEvent = lambda event: get_segments(gui.text_segments.text(), gui.text_segments)
+    # gui.text_segments.focusInEvent = lambda event: focusInEvent(gui)
+    # gui.text_segments.focusOutEvent = lambda event: test_segment_format(gui.text_segments.text(), gui.text_segments)
 
     # gui.text_segments.textChanged.connect(
     #     lambda text, le=gui.text_segments: get_segments(text, le))
@@ -75,17 +81,17 @@ def triggers(gui):
     
     
     # gui. pushButton_piston_up.clicked.connect(
-    #     lambda: pist_up(gui, mems))
+    #     lambda: pist_up(gui))
     # gui.pushButton_piston_down.clicked.connect(
-    #     lambda: pist_down(gui,  mems))
+    #     lambda: pist_down(gui))
     # gui.pushButton_tip_up.clicked.connect(
-    #     lambda: tip_up(gui, mems))
+    #     lambda: tip_up(gui))
     # gui.pushButton_tip_down.clicked.connect(
-    #     lambda: tip_down(gui, mems))
+    #     lambda: tip_down(gui))
     # gui.pushButton_tilt_up.clicked.connect(
-    #     lambda: tilt_up(gui, mems))
+    #     lambda: tilt_up(gui))
     # gui.pushButton_tilt_down.clicked.connect(
-    #     lambda: tilt_down(gui, mems))
+    #     lambda: tilt_down(gui))
 
     
 
@@ -141,6 +147,16 @@ def getSpeed(gui, mount):
     axis = 1
     speed = mount.get_speed(axis)
     gui.label_getSpeed.setText(str(speed))
+
+def setActuator(gui, mems):
+    actuator = 0
+    value = float(gui.text_setActuator.text())
+    mems.set_actuator(actuator, value)
+
+def getActuator(gui, mems):
+    actuator = 0
+    value = mems.get_actuator_data()
+    gui.label_getActuator.setText(str(value[actuator]))
 
 def flatten(gui, mems):
     mems.flatten()
@@ -228,7 +244,8 @@ def get_checked_states(gui):
 
     return checked_states
 
-def get_segments(text, le):
+def test_segment_format(text, le):
+
     '''
     Copilot worte this code
     '''
@@ -249,38 +266,46 @@ def get_segments(text, le):
 
 # Modify the focusInEvent to not clear the text if it's in the correct format
 def focusInEvent(gui):
-    '''
-    Copilot wrote this code
-    '''
-    text = gui.text_segments.text()
-    try:
-        # Check if the string is in the format of an array
-        segments = [int(s.strip()) for s in text.split(',')]
-        # If the format is correct, do not clear the text
-    except ValueError:
-        # If the format is incorrect, clear the text
+
+    segments = get_segments(gui)
+
+    if segments is None:
         gui.text_segments.setText('')
 
+def get_segments(gui):
 
+    try:
+        text_segments = gui.text_segments.text()
+        segments = [int(s.strip()) for s in text_segments.split(',')]
+        return segments
+    except ValueError:
+        print("No segment given.")
+        return None
         
 
-def pist_up(gui, mems):
-    checked_items = get_checked_states(gui)
-    stepsize = check_stepSize(gui.text_pistStepSize)
-    if stepsize is not None:
-        row = [r - 1 for r in checked_items]
-        col = 0
-        table = gui.tab_memsPosition
 
-        for r in row:
-            segment = r
-            pist = float(table.item(r, col).text())
-            tip = float(table.item(r, col + 1).text())
-            tilt = float(table.item(r, col + 2).text())
-            newpist = pist + stepsize
+def pist_up(gui):
+    
+    segments = get_segments(gui)
 
-            mems.set_segment(segment, DM_Piston, newpist, tip, tilt, True)
-            update_cell(table, r, col, newpist)
+    if segments is not None:
+
+        stepsize = check_stepSize(gui.text_pistStepSize)
+
+        if stepsize is not None:
+            row = segments
+            col = 0
+            table = gui.tab_memsPosition
+
+            for r in row:
+                segment = r
+                pist = float(table.item(r, 0).text())
+                tip = float(table.item(r, 1).text())
+                tilt = float(table.item(r, 2).text())
+                newpist = pist + stepsize
+
+                # mems.set_segment(segment, DM_Piston, newpist, tip, tilt, True)
+                update_cell(table, r, col, newpist)
 
 '''
 Pseudocode:
@@ -289,101 +314,123 @@ Get the current piston position
 Add the step size to the current position
 Set the new position
 '''
-def pist_down(gui, mems):
-    checked_items = get_checked_states(gui)
-    stepsize = check_stepSize(gui.text_pistStepSize)
-    if stepsize is not None:
-        row = [r - 1 for r in checked_items]
-        col = 0
-        table = gui.tab_memsPosition
+def pist_down(gui):
 
-        for r in row:
-            segment = r
-            pist = float(table.item(r, col).text())
-            tip = float(table.item(r, col + 1).text())
-            tilt = float(table.item(r, col + 2).text())
-            newpist = pist - stepsize
+    segments = get_segments(gui)
 
-            mems.set_segment(segment, DM_Piston, newpist, tip, tilt, True)
-            update_cell(table, r, col, newpist)
+    if segments is not None:
 
-def tip_up(gui, mems):
+        stepsize = check_stepSize(gui.text_pistStepSize)
 
-    checked_items = get_checked_states(gui)
-    stepsize = check_stepSize(gui.text_pistStepSize)
-    if stepsize is not None:
-        row = [r - 1 for r in checked_items]
-        col = 1
-        table = gui.tab_memsPosition
+        if stepsize is not None:
+            row = segments
+            col = 0
+            table = gui.tab_memsPosition
 
-        for r in row:
-            segment = r
-            pist = float(table.item(r, col - 1).text())
-            tip = float(table.item(r, col).text())
-            tilt = float(table.item(r, col + 1).text())
-            newtip = tip + stepsize
+            for r in row:
+                segment = r
+                pist = float(table.item(r, 0).text())
+                tip = float(table.item(r, 1).text())
+                tilt = float(table.item(r, 2).text())
+                newpist = pist - stepsize
 
-            mems.set_segment(segment, DM_XTilt, pist, newtip, tilt, True)
-            update_cell(table, r, col, newtip)
+                # mems.set_segment(segment, DM_Piston, newpist, tip, tilt, True)
+                update_cell(table, r, col, newpist)
 
-def tip_down(gui, mems):
+
+def tip_up(gui):
+
+    segments = get_segments(gui)
+
+    if segments is not None:
+
+        stepsize = check_stepSize(gui.text_ttStepSize)
+
+        if stepsize is not None:
+            row = segments
+            col = 1
+            table = gui.tab_memsPosition
+
+            for r in row:
+                segment = r
+                pist = float(table.item(r, 0).text())
+                tip = float(table.item(r, 1).text())
+                tilt = float(table.item(r, 2).text())
+                newtip = tip + stepsize
+
+                # mems.set_segment(segment, DM_XTilt, pist, newtip, tilt, True)
+                update_cell(table, r, col, newtip)
+
+def tip_down(gui):
+
+    segments = get_segments(gui)
+
+    if segments is not None:
+
+        stepsize = check_stepSize(gui.text_ttStepSize)
+
+        if stepsize is not None:
+            row = segments
+            col = 1
+            table = gui.tab_memsPosition
+
+            for r in row:
+                segment = r
+                pist = float(table.item(r, 0).text())
+                tip = float(table.item(r, 1).text())
+                tilt = float(table.item(r, 2).text())
+                newtip = tip - stepsize
+
+                # mems.set_segment(segment, DM_XTilt, pist, newtip, tilt, True)
+                update_cell(table, r, col, newtip)
+
+def tilt_up(gui):
     
-    checked_items = get_checked_states(gui)
-    stepsize = check_stepSize(gui.text_pistStepSize)
-    if stepsize is not None:
-        row = [r - 1 for r in checked_items]
-        col = 1
-        table = gui.tab_memsPosition
+    segments = get_segments(gui)
 
-        for r in row:
-            segment = r
-            pist = float(table.item(r, col - 1).text())
-            tip = float(table.item(r, col).text())
-            tilt = float(table.item(r, col + 1).text())
-            newtip = tip - stepsize
+    if segments is not None:
 
-            mems.set_segment(segment, DM_XTilt, pist, newtip, tilt, True)
-            update_cell(table, r, col, newtip)
+        stepsize = check_stepSize(gui.text_ttStepSize)
 
-def tilt_up(gui, mems):
+        if stepsize is not None:
+            row = segments
+            col = 2
+            table = gui.tab_memsPosition
+
+            for r in row:
+                segment = r
+                pist = float(table.item(r, 0).text())
+                tip = float(table.item(r, 1).text())
+                tilt = float(table.item(r, 2).text())
+                newtilt = tilt + stepsize
+
+                # mems.set_segment(segment, DM_YTilt, pist, tip, newtilt, True)
+
+                update_cell(table, r, col, newtilt)
+
+
+def tilt_down(gui):
+
+    segments = get_segments(gui)
+
+    if segments is not None:
+            
+            stepsize = check_stepSize(gui.text_ttStepSize)
     
-    checked_items = get_checked_states(gui)
-    stepsize = check_stepSize(gui.text_pistStepSize)
-    if stepsize is not None:
-        row = [r - 1 for r in checked_items]
-        col = 2
-        table = gui.tab_memsPosition
-
-        for r in row:
-            segment = r
-            pist = float(table.item(r, col - 2).text())
-            tip = float(table.item(r, col - 1).text())
-            tilt = float(table.item(r, col).text())
-            newtilt = tilt + stepsize
-
-            mems.set_segment(segment, DM_YTilt, pist, tip, newtilt, True)
-            update_cell(table, r, col, newtilt)
-
-
-def tilt_down(gui, mems):
-
-    checked_items = get_checked_states(gui)
-    stepsize = check_stepSize(gui.text_pistStepSize)
-    if stepsize is not None:
-        row = [r - 1 for r in checked_items]
-        col = 2
-        table = gui.tab_memsPosition
-
-        for r in row:
-            segment = r
-            pist = float(table.item(r, col - 2).text())
-            tip = float(table.item(r, col - 1).text())
-            tilt = float(table.item(r, col).text())
-            newtilt = tilt - stepsize
-
-            mems.set_segment(segment, DM_YTilt, pist, tip, newtilt, True)
-
-            update_cell(table, r, col, newtilt)
+            if stepsize is not None:
+                row = segments
+                col = 2
+                table = gui.tab_memsPosition
+    
+                for r in row:
+                    segment = r
+                    pist = float(table.item(r, 0).text())
+                    tip = float(table.item(r, 1).text())
+                    tilt = float(table.item(r, 2).text())
+                    newtilt = tilt - stepsize
+    
+                    # mems.set_segment(segment, DM_YTilt, pist, tip, newtilt, True)
+                    update_cell(table, r, col, newtilt)
 
 
 
@@ -594,6 +641,6 @@ def yaw_down(gui, mount):
         update_cell(table, row, col, updatedpos)
 
 
-def update_cell(table, rows, col, value):
-    for r in rows:
-        table.setItem(r, col, value)
+def update_cell(table, r, col, value):
+    item = QtWidgets.QTableWidgetItem("{:.3f}".format(value))
+    table.setItem(r, col, item)

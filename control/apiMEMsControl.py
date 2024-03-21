@@ -39,11 +39,11 @@ class MEMS():
         '''
         return self.dm.poke(actuator, data)
     
-    def set_segment(self, segment: 'int', axis: 'DMSegmentAxis', piston: 'double', xTilt: 'double', yTilt: 'double', applyOffsets: 'bool') -> "int":
+    def set_segment(self, segment: 'int', piston: 'double', xTilt: 'double', yTilt: 'double') -> "int":
         '''
         Set the PTT values of a segment.
         '''
-        return self.dm.set_segment(segment, axis, piston, xTilt, yTilt, applyOffsets)
+        return self.dm.set_segment(segment, piston, xTilt, yTilt, True, True)
     
 
     def get_actuator_data(self) -> np.ndarray:

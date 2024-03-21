@@ -1,5 +1,5 @@
-# from GUI_ui import Ui_MainWindow
-from control_buttons_ui import Ui_MainWindow
+from GUI_ui import Ui_MainWindow
+# from control_buttons_ui import Ui_MainWindow
 from GUI_triggers import triggers, preprocessing
 from PyQt5 import QtCore, QtGui, QtWidgets
 from qt_material import apply_stylesheet

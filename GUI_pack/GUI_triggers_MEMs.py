@@ -8,9 +8,10 @@ from control_buttons_ui import Ui_MainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 
-DM_Piston = apiMEMsControl.DM_Piston
-DM_XTilt = apiMEMsControl.DM_XTilt
-DM_YTilt = apiMEMsControl.DM_YTilt
+    
+# DM_Piston = apiMEMsControl.DM_Piston
+# DM_XTilt = apiMEMsControl.DM_XTilt
+# DM_YTilt = apiMEMsControl.DM_YTilt
 
 def preprocessing(gui):
     gui.list_segments.setVisible(False)
@@ -37,61 +38,59 @@ def triggers(gui, mems, mount):
         lambda: getActuator(gui, mems))
     
     ### Segment list ###
-    # # Replace the original focusInEvent with the new one
-    # gui.text_segments.focusInEvent = lambda event: focusInEvent(gui)
-    # gui.text_segments.focusOutEvent = lambda event: test_segment_format(gui.text_segments.text(), gui.text_segments)
+    # Replace the original focusInEvent with the new one
+    gui.text_segments.focusInEvent = lambda event: focusInEvent(gui)
+    gui.text_segments.focusOutEvent = lambda event: test_segment_format(gui.text_segments.text(), gui.text_segments)
 
     # gui.text_segments.textChanged.connect(
     #     lambda text, le=gui.text_segments: get_segments(text, le))
 
-    # gui.pushButton_numActuators.clicked.connect(
-    #     lambda: print('hi'))
-    
     # gui.pushButton_save.clicked.connect(gui.save)
 
     # ### MEMs control buttons ###
-    # gui.pushButton_flattenMEMs.clicked.connect(flatten)
+    gui.pushButton_flattenMEMs.clicked.connect(
+        lambda: flatten(gui, mems))
 
 
     # ### Manual control buttons ###
-    # gui.pushButton_x_up.clicked.connect(
-    #     lambda: x_up(gui, mount))
-    # gui.pushButton_x_down.clicked.connect(
-    #     lambda: x_down(gui, mount))
-    # gui.pushButton_y_up.clicked.connect(
-    #     lambda: y_up(gui, mount))
-    # gui.pushButton_y_down.clicked.connect(
-    #     lambda: y_down(gui, mount))
-    # gui.pushButton_z_up.clicked.connect(
-    #     lambda: z_up(gui, mount))
-    # gui.pushButton_z_down.clicked.connect(
-    #     lambda: z_down(gui, mount))
-    # gui.pushButton_yaw_up.clicked.connect(
-    #     lambda: yaw_up(gui, mount))
-    # gui.pushButton_yaw_down.clicked.connect(
-    #     lambda: yaw_down(gui, mount))
-    # gui.pushButton_roll_up.clicked.connect(
-    #     lambda: roll_up(gui, mount))
-    # gui.pushButton_roll_down.clicked.connect(
-    #     lambda: roll_down(gui, mount))
-    # gui.pushButton_pitch_up.clicked.connect(
-    #     lambda: pitch_up(gui, mount))
-    # gui.pushButton_pitch_down.clicked.connect(  
-    #     lambda: pitch_down(gui, mount))
+    gui.pushButton_x_up.clicked.connect(
+        lambda: x_up(gui, mount))
+    gui.pushButton_x_down.clicked.connect(
+        lambda: x_down(gui, mount))
+    gui.pushButton_y_up.clicked.connect(
+        lambda: y_up(gui, mount))
+    gui.pushButton_y_down.clicked.connect(
+        lambda: y_down(gui, mount))
+    gui.pushButton_z_up.clicked.connect(
+        lambda: z_up(gui, mount))
+    gui.pushButton_z_down.clicked.connect(
+        lambda: z_down(gui, mount))
+    gui.pushButton_yaw_up.clicked.connect(
+        lambda: yaw_up(gui, mount))
+    gui.pushButton_yaw_down.clicked.connect(
+        lambda: yaw_down(gui, mount))
+    gui.pushButton_roll_up.clicked.connect(
+        lambda: roll_up(gui, mount))
+    gui.pushButton_roll_down.clicked.connect(
+        lambda: roll_down(gui, mount))
+    gui.pushButton_pitch_up.clicked.connect(
+        lambda: pitch_up(gui, mount))
+    gui.pushButton_pitch_down.clicked.connect(  
+        lambda: pitch_down(gui, mount))
     
     
-    # gui. pushButton_piston_up.clicked.connect(
-    #     lambda: pist_up(gui))
-    # gui.pushButton_piston_down.clicked.connect(
-    #     lambda: pist_down(gui))
-    # gui.pushButton_tip_up.clicked.connect(
-    #     lambda: tip_up(gui))
-    # gui.pushButton_tip_down.clicked.connect(
-    #     lambda: tip_down(gui))
-    # gui.pushButton_tilt_up.clicked.connect(
-    #     lambda: tilt_up(gui))
-    # gui.pushButton_tilt_down.clicked.connect(
-    #     lambda: tilt_down(gui))
+    gui. pushButton_piston_up.clicked.connect(
+        lambda: pist_up(gui, mems))
+    gui.pushButton_piston_down.clicked.connect(
+        lambda: pist_down(gui, mems))
+    gui.pushButton_tip_up.clicked.connect(
+        lambda: tip_up(gui, mems))
+    gui.pushButton_tip_down.clicked.connect(
+        lambda: tip_down(gui, mems))
+    gui.pushButton_tilt_up.clicked.connect(
+        lambda: tilt_up(gui, mems))
+    gui.pushButton_tilt_down.clicked.connect(
+        lambda: tilt_down(gui, mems))
 
     
 
@@ -112,14 +111,14 @@ def triggers(gui, mems, mount):
     
     
     ### Set step sizes ###
-    # gui.text_pistStepSize.textChanged.connect(
-    #     lambda text, le=gui.text_pistStepSize: on_text_changed(text, le))
-    # gui.text_ttStepSize.textChanged.connect(
-    #     lambda text, le=gui.text_ttStepSize: on_text_changed(text, le))
-    # gui.text_mountStepSize_urad.textChanged.connect(
-    #     lambda text, le=gui.text_mountStepSize_urad: on_text_changed(text, le))
-    # gui.text_mountStepSize_um.textChanged.connect(
-    #     lambda text, le=gui.text_mountStepSize_um: on_text_changed(text, le))
+    gui.text_pistStepSize.textChanged.connect(
+        lambda text, le=gui.text_pistStepSize: on_text_changed(text, le))
+    gui.text_ttStepSize.textChanged.connect(
+        lambda text, le=gui.text_ttStepSize: on_text_changed(text, le))
+    gui.text_mountStepSize_urad.textChanged.connect(
+        lambda text, le=gui.text_mountStepSize_urad: on_text_changed(text, le))
+    gui.text_mountStepSize_um.textChanged.connect(
+        lambda text, le=gui.text_mountStepSize_um: on_text_changed(text, le))
 
     # gui.table_mountPos_rpy.itemChanged.connect(on_item_changed)
     # gui.table_mountPos_xyz.itemChanged.connect(on_item_changed)
@@ -160,8 +159,11 @@ def getActuator(gui, mems):
 
 def flatten(gui, mems):
     mems.flatten()
+    for r in range(37):
+        for c in range(3):
+            gui.tab_memsPosition.setItem(r, c, QtWidgets.QTableWidgetItem('0.000'))
 
-    
+
 
 def toggleList(gui):
     # Toggle the visibility of the list widget
@@ -281,10 +283,9 @@ def get_segments(gui):
     except ValueError:
         print("No segment given.")
         return None
-        
+    
 
-
-def pist_up(gui):
+def pist_up(gui, mems):
     
     segments = get_segments(gui)
 
@@ -304,7 +305,7 @@ def pist_up(gui):
                 tilt = float(table.item(r, 2).text())
                 newpist = pist + stepsize
 
-                # mems.set_segment(segment, DM_Piston, newpist, tip, tilt, True)
+                mems.set_segment(segment, newpist, tip, tilt)
                 update_cell(table, r, col, newpist)
 
 '''
@@ -314,7 +315,7 @@ Get the current piston position
 Add the step size to the current position
 Set the new position
 '''
-def pist_down(gui):
+def pist_down(gui, mems):
 
     segments = get_segments(gui)
 
@@ -334,11 +335,11 @@ def pist_down(gui):
                 tilt = float(table.item(r, 2).text())
                 newpist = pist - stepsize
 
-                # mems.set_segment(segment, DM_Piston, newpist, tip, tilt, True)
+                mems.set_segment(segment, newpist, tip, tilt)
                 update_cell(table, r, col, newpist)
 
 
-def tip_up(gui):
+def tip_up(gui, mems):
 
     segments = get_segments(gui)
 
@@ -358,10 +359,10 @@ def tip_up(gui):
                 tilt = float(table.item(r, 2).text())
                 newtip = tip + stepsize
 
-                # mems.set_segment(segment, DM_XTilt, pist, newtip, tilt, True)
+                mems.set_segment(segment, pist, newtip, tilt)
                 update_cell(table, r, col, newtip)
 
-def tip_down(gui):
+def tip_down(gui, mems):
 
     segments = get_segments(gui)
 
@@ -381,10 +382,10 @@ def tip_down(gui):
                 tilt = float(table.item(r, 2).text())
                 newtip = tip - stepsize
 
-                # mems.set_segment(segment, DM_XTilt, pist, newtip, tilt, True)
+                mems.set_segment(segment, pist, newtip, tilt)
                 update_cell(table, r, col, newtip)
 
-def tilt_up(gui):
+def tilt_up(gui, mems):
     
     segments = get_segments(gui)
 
@@ -404,12 +405,12 @@ def tilt_up(gui):
                 tilt = float(table.item(r, 2).text())
                 newtilt = tilt + stepsize
 
-                # mems.set_segment(segment, DM_YTilt, pist, tip, newtilt, True)
+                mems.set_segment(segment, pist, tip, newtilt)
 
                 update_cell(table, r, col, newtilt)
 
 
-def tilt_down(gui):
+def tilt_down(gui, mems):
 
     segments = get_segments(gui)
 
@@ -429,7 +430,7 @@ def tilt_down(gui):
                     tilt = float(table.item(r, 2).text())
                     newtilt = tilt - stepsize
     
-                    # mems.set_segment(segment, DM_YTilt, pist, tip, newtilt, True)
+                    mems.set_segment(segment, pist, tip, newtilt)
                     update_cell(table, r, col, newtilt)
 
 
@@ -438,10 +439,16 @@ def x_up(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_um)
     if stepsize is not None:
         table = gui.table_mountPos_xyz
-        row = [0]
+        row = 0
         col = 0
         axis = 4
 
+        # This commented code is to use when not connected to the mount
+        # pos = float(table.item(0, 0).text())
+        # newpos = pos + stepsize
+        # update_cell(table, row, col, newpos)
+
+        # Uncomment all of below when actuatlly connected
         pos = mount.get_pos(axis)
         newpos = pos + stepsize
         mount.set_pos(axis, newpos)
@@ -455,13 +462,13 @@ def x_up(gui, mount):
         Add the step size to the current position
         Set the new position
         '''
-    
+
 
 def x_down(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_um)
     if stepsize is not None:
         table = gui.table_mountPos_xyz
-        row = [0]
+        row = 0
         col = 0
         axis = 4
 
@@ -478,7 +485,7 @@ def y_up(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_um)
     if stepsize is not None:
         table = gui.table_mountPos_xyz
-        row = [0]
+        row = 0
         col = 1
         axis = 6
 
@@ -489,12 +496,13 @@ def y_up(gui, mount):
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
+
 def y_down(gui, mount):
     
     stepsize = check_stepSize(gui.text_mountStepSize_um)
     if stepsize is not None:
         table = gui.table_mountPos_xyz
-        row = [0]
+        row = 0
         col = 1
         axis = 6
 
@@ -510,7 +518,7 @@ def z_up(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_um)
     if stepsize is not None:
         table = gui.table_mountPos_xyz
-        row = [0]
+        row = 0
         col = 2
         axis = 5
 
@@ -526,7 +534,7 @@ def z_down(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_um)
     if stepsize is not None:
         table = gui.table_mountPos_xyz
-        row = [0]
+        row = 0
         col = 2
         axis = 5
 
@@ -543,7 +551,7 @@ def roll_up(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_urad)
     if stepsize is not None:
         table = gui.table_mountPos_rpy
-        row = [0]
+        row = 0
         col = 0
         axis = 2
 
@@ -560,7 +568,7 @@ def roll_down(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_urad)
     if stepsize is not None:
         table = gui.table_mountPos_rpy
-        row = [0]
+        row = 0
         col = 0
         axis = 2
 
@@ -577,7 +585,7 @@ def pitch_up(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_urad)
     if stepsize is not None:
         table = gui.table_mountPos_rpy
-        row = [0]
+        row = 0
         col = 1
         axis = 1
 
@@ -594,7 +602,7 @@ def pitch_down(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_urad)
     if stepsize is not None:
         table = gui.table_mountPos_rpy
-        row = [0]
+        row = 0
         col = 1
         axis = 1
 
@@ -611,7 +619,7 @@ def yaw_up(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_urad)
     if stepsize is not None:
         table = gui.table_mountPos_rpy
-        row = [0]
+        row = 0
         col = 2
         axis = 3
 
@@ -628,7 +636,7 @@ def yaw_down(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_urad)
     if stepsize is not None:
         table = gui.table_mountPos_rpy
-        row = [0]
+        row = 0
         col = 2
         axis = 3
 

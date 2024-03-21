@@ -8,10 +8,7 @@ from control_buttons_ui import Ui_MainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 
-    
-# DM_Piston = apiMEMsControl.DM_Piston
-# DM_XTilt = apiMEMsControl.DM_XTilt
-# DM_YTilt = apiMEMsControl.DM_YTilt
+
 
 def preprocessing(gui):
     gui.list_segments.setVisible(False)
@@ -22,32 +19,28 @@ def triggers(gui, mems, mount):
     '''
     Test we have connection with MEMs and mount
     '''
-    gui.pushButton_numActuators.clicked.connect(
-        lambda: numActuators(gui, mems))
+    # gui.pushButton_numActuators.clicked.connect(
+    #     lambda: numActuators(gui, mems))
     
-    gui.pushButton_setSpeed.clicked.connect(
-        lambda: setSpeed(gui, mount))
+    # gui.pushButton_setActuator.clicked.connect(
+    #     lambda: setActuator(gui, mems))
+    
+    # gui.pushButton_getActuator.clicked.connect(
+    #     lambda: getActuator(gui, mems))
+    
+    # gui.pushButton_getPos.clicked.connect(
+    #     lambda: getPos(gui, mount))
 
-    gui.pushButton_getSpeed.clicked.connect(
-        lambda: getSpeed(gui, mount))
-    
-    gui.pushButton_setActuator.clicked.connect(
-        lambda: setActuator(gui, mems))
-    
-    gui.pushButton_getActuator.clicked.connect(
-        lambda: getActuator(gui, mems))
-    
+    # gui.pushButton_setPos.clicked.connect(
+    #     lambda: setPos(gui, mount))
+
+
     ### Segment list ###
     # Replace the original focusInEvent with the new one
     gui.text_segments.focusInEvent = lambda event: focusInEvent(gui)
     gui.text_segments.focusOutEvent = lambda event: test_segment_format(gui.text_segments.text(), gui.text_segments)
 
-    # gui.text_segments.textChanged.connect(
-    #     lambda text, le=gui.text_segments: get_segments(text, le))
-
-    # gui.pushButton_save.clicked.connect(gui.save)
-
-    # ### MEMs control buttons ###
+    ### MEMs control buttons ###
     gui.pushButton_flattenMEMs.clicked.connect(
         lambda: flatten(gui, mems))
 
@@ -77,6 +70,21 @@ def triggers(gui, mems, mount):
         lambda: pitch_up(gui, mount))
     gui.pushButton_pitch_down.clicked.connect(  
         lambda: pitch_down(gui, mount))
+
+    gui.pushButton_stop.clicked.connect(
+        lambda: stop(mount))
+
+    gui.pushButton_setSpeed.clicked.connect(
+        lambda: setSpeed(gui, mount))
+    gui.pushButton_getSpeed.clicked.connect(
+        lambda: getSpeed(gui, mount))
+    
+    gui.pushButton_setOrigin.clicked.connect(
+        lambda: set_origin(gui, mount))
+    gui.pushButton_getOrigin.clicked.connect(
+        lambda: get_origin(gui, mount))
+    gui.pushButton_origin.clicked.connect(
+        lambda: origin(gui, mount))
     
     
     gui. pushButton_piston_up.clicked.connect(
@@ -92,10 +100,8 @@ def triggers(gui, mems, mount):
     gui.pushButton_tilt_down.clicked.connect(
         lambda: tilt_down(gui, mems))
 
-    
 
-   
-    
+
     # # ### Live cam checkbox ###
     # # gui.checkBox_livecam.stateChanged.connect(
     # #     lambda state, gui=gui: toggleLiveCam(gui, state))
@@ -115,12 +121,13 @@ def triggers(gui, mems, mount):
         lambda text, le=gui.text_pistStepSize: on_text_changed(text, le))
     gui.text_ttStepSize.textChanged.connect(
         lambda text, le=gui.text_ttStepSize: on_text_changed(text, le))
+    
     gui.text_mountStepSize_urad.textChanged.connect(
         lambda text, le=gui.text_mountStepSize_urad: on_text_changed(text, le))
     gui.text_mountStepSize_um.textChanged.connect(
         lambda text, le=gui.text_mountStepSize_um: on_text_changed(text, le))
 
-    # gui.table_mountPos_rpy.itemChanged.connect(on_item_changed)
+    gui.table_mountPos_rpy.itemChanged.connect(on_item_changed)
     # gui.table_mountPos_xyz.itemChanged.connect(on_item_changed)
     # gui.tab_memsPosition.itemChanged.connect(on_item_changed)
 
@@ -137,15 +144,15 @@ def numActuators(gui, mems):
     print(num_actuators)
     gui.label_numActuators.setText(str(num_actuators))
 
-def setSpeed(gui, mount):
-    speed = int(gui.text_setSpeed.text())
-    axis = 1
-    mount.set_speed(axis, speed)
+def getPos(gui, mount):
+    axis = 4
+    pos = mount.get_pos(axis)
+    gui.label_getPos.setText(str(pos))
 
-def getSpeed(gui, mount):
-    axis = 1
-    speed = mount.get_speed(axis)
-    gui.label_getSpeed.setText(str(speed))
+def setPos(gui, mount):
+    axis = 4
+    pos = float(gui.text_setPos.text())
+    mount.set_pos(axis, pos)
 
 def setActuator(gui, mems):
     actuator = 0
@@ -157,18 +164,68 @@ def getActuator(gui, mems):
     value = mems.get_actuator_data()
     gui.label_getActuator.setText(str(value[actuator]))
 
+def setSpeed(gui, mount):
+    speed = int(gui.text_setSpeed.text())
+    axis = int(gui.text_axis.text())
+    mount.set_speed(axis, speed)
+
+def getSpeed(gui, mount):
+    axis = int(gui.text_axis.text())
+    speed = mount.get_speed(axis)
+    gui.label_getSpeed.setText(str(speed))
+
+def set_origin(gui, mount):
+    axis = int(gui.text_axis.text())
+    pattern = int(gui.text_setOrigin.text())
+    mount.set_origin_pattern(axis, pattern)
+
+def get_origin(gui, mount):
+    axis = int(gui.text_axis.text())
+    pattern = mount.get_origin_pattern(axis)
+    gui.label_getOrigin.setText(str(pattern))
+
+def origin(gui, mount):
+    axis = int(gui.text_axis.text())
+    mount.go_origin(axis)
+
+    # No point doing this if you call it while mount still moving.
+    # row = 0
+    
+    # if axis == 1:
+    #     table = gui.table_mountPos_rpy
+    #     col = 1
+    # elif axis == 2:
+    #     table = gui.table_mountPos_rpy
+    #     col = 0
+    # elif axis == 3:
+    #     table = gui.table_mountPos_rpy
+    #     col = 2
+    # elif axis == 4:
+    #     table = gui.table_mountPos_xyz
+    #     col = 0
+    # elif axis == 5:
+    #     table = gui.table_mountPos_xyz
+    #     col = 2
+    # elif axis == 6:
+    #     table = gui.table_mountPos_xyz
+    #     col = 1
+
+    
+        # pos = mount.get_pos(axis)
+        # update_cell(table, row, col, pos)
+
+def stop(mount):
+    mount.rstop()
+
 def flatten(gui, mems):
     mems.flatten()
     for r in range(37):
         for c in range(3):
             gui.tab_memsPosition.setItem(r, c, QtWidgets.QTableWidgetItem('0.000'))
 
-
-
 def toggleList(gui):
     # Toggle the visibility of the list widget
     gui.list_segments.setVisible(not gui.list_segments.isVisible())
-
     # gui.list_segments.raise_()
 
 def setTableEditable(table, editable):
@@ -215,10 +272,26 @@ def on_text_changed(text, variable):
 def on_item_changed(item):
     try:
         float_value = float(item.text())
+
+        '''
+        psudeocode:
+        1. check that it will be within limits
+        2. send the command
+        3. get the new position
+        4. update the cell
+        '''
+
+
         # If the value is a valid float, allow the change
         item.setText("{:.3f}".format(float_value))  # Convert to 3 decimal places if it's a float
     except ValueError:
         # If the entered value is not a float, prevent the change
+        
+        '''
+        psuedocode:
+        1. get the previous cell value
+        2. set the cell value to the previous value
+        '''
         item.setText("0.000")
 
 def check_stepSize(stepsize):
@@ -235,16 +308,7 @@ def check_stepSize(stepsize):
         print("Step value is not a float.")
         return None
 
-def get_checked_states(gui):
-    # Get the checked state of each item in the QListWidget
-    checked_states = []
 
-    for i in range(gui.list_segments.count()):
-        item = gui.list_segments.item(i)
-        if item.checkState() == Qt.Checked:
-            checked_states.append(int(item.text()))
-
-    return checked_states
 
 def test_segment_format(text, le):
 
@@ -437,22 +501,22 @@ def tilt_down(gui, mems):
 
 def x_up(gui, mount):
     stepsize = check_stepSize(gui.text_mountStepSize_um)
+
     if stepsize is not None:
         table = gui.table_mountPos_xyz
         row = 0
         col = 0
         axis = 4
 
-        # This commented code is to use when not connected to the mount
+        # # This commented code is to use when not connected to the mount
         # pos = float(table.item(0, 0).text())
         # newpos = pos + stepsize
         # update_cell(table, row, col, newpos)
 
         # Uncomment all of below when actuatlly connected
         pos = mount.get_pos(axis)
-        newpos = pos + stepsize
+        newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
-        
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -473,9 +537,8 @@ def x_down(gui, mount):
         axis = 4
 
         pos = mount.get_pos(axis)
-        newpos = pos - stepsize
+        newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
-        
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -490,7 +553,7 @@ def y_up(gui, mount):
         axis = 6
 
         pos = mount.get_pos(axis)
-        newpos = pos + stepsize
+        newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
         
         updated_pos = mount.get_pos(axis)
@@ -507,7 +570,7 @@ def y_down(gui, mount):
         axis = 6
 
         pos = mount.get_pos(axis)
-        newpos = pos - stepsize
+        newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
         
         updated_pos = mount.get_pos(axis)
@@ -523,7 +586,7 @@ def z_up(gui, mount):
         axis = 5
 
         pos = mount.get_pos(axis)
-        newpos = pos + stepsize
+        newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
         
         updated_pos = mount.get_pos(axis)
@@ -539,7 +602,7 @@ def z_down(gui, mount):
         axis = 5
 
         pos = mount.get_pos(axis)
-        newpos = pos - stepsize
+        newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
         
         updated_pos = mount.get_pos(axis)
@@ -555,10 +618,14 @@ def roll_up(gui, mount):
         col = 0
         axis = 2
 
+        # # This commented code is to use when not connected to the mount
+        # pos = float(table.item(0, 0).text())
+        # newpos = pos + stepsize
+        # update_cell(table, row, col, newpos)
+
         pos = mount.get_pos(axis)
-        newpos = pos + stepsize
+        newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
-        
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -573,9 +640,8 @@ def roll_down(gui, mount):
         axis = 2
 
         pos = mount.get_pos(axis)
-        newpos = pos - stepsize
+        newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
-        
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -590,9 +656,8 @@ def pitch_up(gui, mount):
         axis = 1
 
         pos = mount.get_pos(axis)
-        newpos = pos + stepsize
+        newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
-        
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -607,9 +672,8 @@ def pitch_down(gui, mount):
         axis = 1
 
         pos = mount.get_pos(axis)
-        newpos = pos - stepsize
+        newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
-        
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -624,9 +688,8 @@ def yaw_up(gui, mount):
         axis = 3
 
         pos = mount.get_pos(axis)
-        newpos = pos + stepsize
+        newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
-        
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -641,10 +704,8 @@ def yaw_down(gui, mount):
         axis = 3
 
         pos = mount.get_pos(axis)
-        newpos = pos - stepsize
+        newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
-
-        # should update cell by calling getpos again
         updatedpos = mount.get_pos(axis)
         update_cell(table, row, col, updatedpos)
 
@@ -652,3 +713,15 @@ def yaw_down(gui, mount):
 def update_cell(table, r, col, value):
     item = QtWidgets.QTableWidgetItem("{:.3f}".format(value))
     table.setItem(r, col, item)
+
+
+def get_checked_states(gui):
+    # Get the checked state of each item in the QListWidget
+    checked_states = []
+
+    for i in range(gui.list_segments.count()):
+        item = gui.list_segments.item(i)
+        if item.checkState() == Qt.Checked:
+            checked_states.append(int(item.text()))
+
+    return checked_states

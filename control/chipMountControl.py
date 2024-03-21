@@ -8,11 +8,15 @@ class Mount:
         # self.s = Serial('/dev/ttyUSB2')#, baudrate=38400) 
         self.s = Serial(port, baudrate)
 
-        path = os.getcwd()
+        # path = os.getcwd()
+        path = '/home/scexao/steph/control-code'
         filename = 'command_log.txt'
         file_path = f"{path}/{filename}"
 
         self.f = open(file_path, "a")
+    
+    def closeFile(self):
+        self.f.close()
     
     
     def read_command(self, cmd: str) -> str:
@@ -343,6 +347,7 @@ class Mount:
         dt = str(datetime.now())
         line = "{}: {}\n".format(dt, cmd)
         self.f.writelines(line)
+        self.f.flush()
 
 
 # if __name__ == "__main__":

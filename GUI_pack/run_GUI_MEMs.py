@@ -14,13 +14,18 @@ if useRemote:
     import apiMEMsControl 
     import chipMountControl 
 
-    def finalFunction(mems):
-        mems.closeDM()
-        print('DM closed successfully')
+    # def finalFunction(mems):
+    #     mems.closeDM()
+    #     print('DM closed successfully')
+    
+    # def finalFunction(mount):
+    #     mount.closeFile()
+    #     print('File closed successfully')
 
     mems = apiMEMsControl.MEMS('32AW038#027')
     mems.openDM()
     print('DM opened successfully')
+        # mount = Mount('/dev/serial/by-id/usb-SURUGA_SEIKI_SURUGA_SEIKI_DS102-if00-port0', 38400)
     mount = chipMountControl.Mount('/dev/serial/by-id/usb-SURUGA_SEIKI_SURUGA_SEIKI_DS102-if00-port0', 38400)
     print(mount.idn())
 
@@ -32,11 +37,12 @@ if useRemote:
     try:
         triggers(ui, mems, mount)
         MainWindow.show()
-        app.aboutToQuit.connect(lambda: finalFunction(mems))
+        # app.aboutToQuit.connect(lambda: finalFunction(mount))
+        # app.aboutToQuit.connect(lambda: finalFunction(mems))
         sys.exit(app.exec_())
     except Exception as e:
         print(e)
-        finalFunction(mems)
+        # finalFunction(mems)
         sys.exit(app.exec_())
 
 else:

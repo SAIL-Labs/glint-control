@@ -37,7 +37,7 @@ def triggers(gui, mems, mount):
 
     ### Segment list ###
     # Replace the original focusInEvent with the new one
-    gui.text_segments.focusInEvent = lambda event: focusInEvent(gui)
+    gui.text_segments.focusInEvent = lambda event: focusInEvent_segments(gui)
     gui.text_segments.focusOutEvent = lambda event: test_segment_format(gui.text_segments.text(), gui.text_segments)
 
     ### MEMs control buttons ###
@@ -261,8 +261,14 @@ def toggleLiveCam(gui, state):
         gui.widget_selectFrame.setEnabled(False)
     else:
         gui.widget_selectFrame.setEnabled(True)
-                                            
+
+
+ 
+
+    
+
 def on_text_changed(text, variable):
+
     try:
         value = float(text)
     except ValueError:
@@ -270,8 +276,11 @@ def on_text_changed(text, variable):
         print("Input value is not a float.")
 
 def on_item_changed(item):
+    text = item.text()
     try:
-        float_value = float(item.text())
+        float_value = float(text)
+
+        
 
         '''
         psudeocode:
@@ -292,7 +301,10 @@ def on_item_changed(item):
         1. get the previous cell value
         2. set the cell value to the previous value
         '''
-        item.setText("0.000")
+        item.setText(str(item.data(Qt.UserRole)))
+
+        # Connect the cellChanged signal to the function
+    # gui.tab_memsPosition.cellChanged.connect(on_tab_memsPosition_cell_changed)
 
 def check_stepSize(stepsize):
     step = stepsize.text()
@@ -331,12 +343,16 @@ def test_segment_format(text, le):
             print("Invalid format. Please enter numbers separated by commas.")
 
 # Modify the focusInEvent to not clear the text if it's in the correct format
-def focusInEvent(gui):
+def focusInEvent_segments(gui):
 
     segments = get_segments(gui)
 
     if segments is None:
         gui.text_segments.setText('')
+
+def focusInEvent_mems(gui):
+
+    
 
 def get_segments(gui):
 

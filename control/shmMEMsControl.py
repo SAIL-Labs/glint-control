@@ -86,8 +86,6 @@ class MEMS():
         volt = 0.5*np.random.rand(111)
         self.dmvolt.set_data(volt)
     
-    
-    
 
 if __name__ == "__main__":
     dm = MEMS()

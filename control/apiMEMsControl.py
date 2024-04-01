@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/home/scexao/steph/bmc/setup_files')
+sys.path.append('/home/scexao/steph/bmc/setup_files') # All of these files are in /home/scexao/src/hardwaresecrets/drivers/bmc111
 
 import bmc
 import numpy as np
@@ -53,8 +53,8 @@ class MEMS():
         return self.dm.get_segment_range(segment, axis, piston, xTilt, yTilt, applyOffsets)
     
     def flatten(self) -> None:
-        data = np.zeros(self.dm.num_actuators(), dtype=float)
-        self.send_data(data)
+        flat = np.loadtxt('32AW038_1500nm.txt', dtype=float)
+        self.send_data(flat)
     
     
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>678</width>
-    <height>772</height>
+    <width>750</width>
+    <height>779</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -63,6 +63,9 @@
        </item>
        <item>
         <widget class="QLineEdit" name="text_segments">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string>E.g. 0, 4, 8</string>
          </property>
@@ -249,6 +252,9 @@
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <widget class="QLabel" name="label_manualMEMs">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
         <property name="text">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:11pt; font-weight:600;&quot;&gt;Manual MEMs Control&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -256,6 +262,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="checkBox_manualMEMs">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
         <property name="text">
          <string>Enable Manual Control</string>
         </property>
@@ -285,7 +294,7 @@
     <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
-       <x>9</x>
+       <x>10</x>
        <y>10</y>
        <width>161</width>
        <height>131</height>
@@ -523,6 +532,9 @@
     </widget>
    </widget>
    <widget class="QFrame" name="frame_memsPos">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>260</x>
@@ -539,7 +551,7 @@
     </property>
     <widget class="QWidget" name="widget_memsPos" native="true">
      <property name="enabled">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <property name="geometry">
       <rect>
@@ -554,7 +566,7 @@
        <rect>
         <x>0</x>
         <y>46</y>
-        <width>171</width>
+        <width>181</width>
         <height>611</height>
        </rect>
       </property>
@@ -565,7 +577,7 @@
        <item>
         <widget class="QTableWidget" name="tab_memsPosition">
          <property name="enabled">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -590,9 +602,6 @@
          </property>
          <property name="sizeAdjustPolicy">
           <enum>QAbstractScrollArea::AdjustIgnored</enum>
-         </property>
-         <property name="editTriggers">
-          <set>QAbstractItemView::AllEditTriggers</set>
          </property>
          <property name="selectionMode">
           <enum>QAbstractItemView::NoSelection</enum>
@@ -1626,6 +1635,9 @@
        </item>
        <item>
         <widget class="QPushButton" name="pushButton_flattenMEMs">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>Flatten MEMs</string>
          </property>
@@ -1635,7 +1647,7 @@
      </widget>
      <widget class="QLabel" name="label_memsPosition">
       <property name="enabled">
-       <bool>true</bool>
+       <bool>false</bool>
       </property>
       <property name="geometry">
        <rect>
@@ -1831,7 +1843,7 @@
       <x>20</x>
       <y>310</y>
       <width>221</width>
-      <height>381</height>
+      <height>391</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -1844,7 +1856,7 @@
         <x>0</x>
         <y>0</y>
         <width>211</width>
-        <height>371</height>
+        <height>391</height>
        </rect>
       </property>
       <property name="frameShape">
@@ -1859,7 +1871,7 @@
          <x>10</x>
          <y>60</y>
          <width>191</width>
-         <height>311</height>
+         <height>321</height>
         </rect>
        </property>
        <widget class="QWidget" name="layoutWidget_2">
@@ -1868,7 +1880,7 @@
           <x>0</x>
           <y>4</y>
           <width>191</width>
-          <height>301</height>
+          <height>311</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -2306,7 +2318,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>678</width>
+     <width>750</width>
      <height>37</height>
     </rect>
    </property>

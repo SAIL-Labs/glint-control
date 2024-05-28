@@ -1,5 +1,10 @@
-# import sys
+import sys
+sys.path.append('/Users/sbry5606/phd/phd-code/chip-sim')
 # sys.path.append('/home/scexao/steph/control-code')
+
+# from chip import Chip
+from spectra import create_spectra_figure as spectra
+from piston_phases import plot_null
 
 # import apiMEMsControl 
 # import chipMountControl 
@@ -7,6 +12,12 @@
 from control_buttons_ui import Ui_MainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsScene, QGraphicsView
+
+import numpy as np
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
 
 
 # PREVIOUS_VALUES_MEMS = {(row, col): 0 for row in range(37) for col in range(3)}
@@ -20,12 +31,117 @@ PREVIOUS_VALUES = {
 }
 
 def preprocessing(gui):
-    # gui.list_segments.setVisible(False)
-    pass
+
+    plot_null(gui)
+    simluate_spectra(gui)
+
+def simluate_spectra(gui, aperture = 0, opd = 0):
+
+    n_apertures = 3
+    n_phot = 3
+    n_tricoupler = 3
+    n_directional = 0
+    coeff_photo = np.array([1/3, 1/3, 1/3])
+    coeff_interf = np.array([1/2, 1/2, 1/2])
+    pistons = np.zeros(3)
+    pistons[0] = int(gui.tab_memsPosition_base.item(0, 0).text().replace(',',''))*1e-9
+    pistons[1] = int(gui.tab_memsPosition_base.item(1, 0).text().replace(',',''))*1e-9
+    pistons[2] = int(gui.tab_memsPosition_base.item(2, 0).text().replace(',',''))*1e-9
+    
+    pistons[aperture] = opd
+
+    figure = Figure(figsize=(3, 4.7))
+
+    spectra(pistons, n_apertures, n_phot, n_tricoupler, n_directional, coeff_photo, coeff_interf, figure)
+
+    canvas = FigureCanvas(figure)
+    scene = QGraphicsScene()
+    gui.graphicsView_spectra.setScene(scene)
+    scene.addWidget(canvas)
+
+
+def plot_null(gui):
+
+    figure = Figure(figsize=(3.2, 2))
+    canvas = FigureCanvas(figure)
+    scene = QGraphicsScene()
+    gui.graphicsView_null.setScene(scene)
+    ax = figure.add_subplot(111)
+    x = np.linspace(0,10,100)
+    y = np.sin(x)
+
+    ax.set_ylabel('y')
+    ax.set_xlabel('x')  
+    ax.plot(x, y)
+    
+    scene.addWidget(canvas)
+
+def update_spectra(gui, memsMode, action):
+
+    '''
+    Pseudocode:
+    1. get mems mode
+    2. Get the baseline, segment, piston val
+    3. call plot_spectra
+    '''
+
+    if memsMode == 'base':
+        baseline = gui.comboBox_baselines.currentText()
+
+        # Convert the baseline array into a list of integers
+        try:
+            baseline_list = [int(s.strip()) for s in baseline.split(',')]
+        
+        except ValueError:
+            print("Invalid baseline format.")
+            return
+        
+        # Get segment 
+        if gui.radioButton_seg1.isChecked():
+            segment = baseline_list[0]
+        elif gui.radioButton_seg2.isChecked():
+            segment = baseline_list[1]
+        else:
+            print('No segment selected.')
+            return
+        
+        aperture = segment - 1 # These are equivalent, but the segment is 1-indexed while aperture is 0-indexed. This is NOT transferable when teh segment numbers are no longer [1,2,3].
+
+        c = 0 # The piston value is always in the first column
+        r = aperture # The row is the aperture number
+        
+        # Get piston value
+        prev_opd = gui.tab_memsPosition_base.item(r, c).text()
+
+        prev_opd = float(prev_opd.replace(',', ''))*1e-9
+        opd = float(gui.text_pistStepSize_base.text())*1e-9
+
+        if action == 'pist_up':
+            updated_opd = prev_opd + opd
+        elif action == 'pist_down':
+            updated_opd = prev_opd - opd
+
+
+        gui.tab_memsPosition_base.setItem(r, c, QtWidgets.QTableWidgetItem(f'{updated_opd*1e9:n}'))
+
+        simluate_spectra(gui, aperture, updated_opd)
+
+    elif memsMode == 'segment':
+        pass
+    else:
+        print("Invalid mems mode.")
+        return
+    
+    
+# def resizeEvent(event):
+#         # Update canvas size when QGraphicsView is resized
+#         self.canvas.setGeometry(0, 0, self.graphicsView.width(), self.graphicsView.height())
+#         self.pixmap = self.canvas.grab()
+#         self.pixmap_item.setPixmap(self.pixmap)
     
 
 
-def triggers(gui):
+def triggers(gui, mems, mount):
 
     '''
     Test we have connection with MEMs and mount
@@ -98,17 +214,17 @@ def triggers(gui):
         lambda: origin(gui, mount))
     
     
-    gui. pushButton_piston_up.clicked.connect(
-        lambda: pist_up(gui, mems))
-    gui.pushButton_piston_down.clicked.connect(
-        lambda: pist_down(gui, mems))
-    gui.pushButton_tip_up.clicked.connect(
+    gui. pushButton_piston_up_base.clicked.connect(
+        lambda: pist_up(gui, mems, memsMode = 'base'))
+    gui.pushButton_piston_down_base.clicked.connect(
+        lambda: pist_down(gui, mems, memsMode = 'base'))
+    gui.pushButton_tip_up_base.clicked.connect(
         lambda: tip_up(gui, mems))
-    gui.pushButton_tip_down.clicked.connect(
+    gui.pushButton_tip_down_base.clicked.connect(
         lambda: tip_down(gui, mems))
-    gui.pushButton_tilt_up.clicked.connect(
+    gui.pushButton_tilt_up_base.clicked.connect(
         lambda: tilt_up(gui, mems))
-    gui.pushButton_tilt_down.clicked.connect(
+    gui.pushButton_tilt_down_base.clicked.connect(
         lambda: tilt_down(gui, mems))
 
 
@@ -128,10 +244,10 @@ def triggers(gui):
     
     
     ### Set step sizes ###
-    gui.text_pistStepSize.textChanged.connect(
-        lambda text, le=gui.text_pistStepSize: on_text_changed(text, le))
-    gui.text_ttStepSize.textChanged.connect(
-        lambda text, le=gui.text_ttStepSize: on_text_changed(text, le))
+    gui.text_pistStepSize_base.textChanged.connect(
+        lambda text, le=gui.text_pistStepSize_base: on_text_changed(text, le))
+    gui.text_ttStepSize_base.textChanged.connect(
+        lambda text, le=gui.text_ttStepSize_base: on_text_changed(text, le))
     
     gui.text_mountStepSize_urad.textChanged.connect(
         lambda text, le=gui.text_mountStepSize_urad: on_text_changed(text, le))
@@ -198,9 +314,19 @@ def get_origin(gui, mount):
     pattern = mount.get_origin_pattern(axis)
     gui.label_getOrigin.setText(str(pattern))
 
+def preorigin_checks():
+
+    '''
+    check the following:
+    1) origin pattern is correct
+    2) position relative to origin is good to proceed with origining
+    3) if not, a pop-up message should appear
+    '''
+
 def origin(gui, mount):
     axis = int(gui.text_axis.text())
     mount.go_origin(axis)
+
 
     # No point doing this if you call it while mount still moving.
     # row = 0
@@ -279,9 +405,7 @@ def toggleLiveCam(gui, state):
         gui.widget_selectFrame.setEnabled(True)
 
 
- 
-
-    
+   
 
 def on_text_changed(text, variable):
 
@@ -454,28 +578,31 @@ def get_segments(gui):
         return None
     
 
-def pist_up(gui, mems):
-    
-    segments = get_segments(gui)
+def pist_up(gui, mems, memsMode): # mems mode refers to if you use segments or baselines
 
-    if segments is not None:
+    if gui.checkBox_simMode.isChecked():
+        update_spectra(gui, memsMode, action = 'pist_up')
+    else:
+        segments = get_segments(gui)
 
-        stepsize = check_stepSize(gui.text_pistStepSize)
+        if segments is not None:
 
-        if stepsize is not None:
-            row = segments
-            col = 0
-            table = gui.tab_memsPosition
+            stepsize = check_stepSize(gui.text_pistStepSize)
 
-            for r in row:
-                segment = r
-                pist = float(table.item(r, 0).text())
-                tip = float(table.item(r, 1).text())
-                tilt = float(table.item(r, 2).text())
-                newpist = pist + stepsize
+            if stepsize is not None:
+                row = segments
+                col = 0
+                table = gui.tab_memsPosition
 
-                mems.set_segment(segment, newpist, tip, tilt)
-                update_cell(table, r, col, newpist)
+                for r in row:
+                    segment = r
+                    pist = float(table.item(r, 0).text())
+                    tip = float(table.item(r, 1).text())
+                    tilt = float(table.item(r, 2).text())
+                    newpist = pist + stepsize
+
+                    mems.set_segment(segment, newpist, tip, tilt)
+                    update_cell(table, r, col, newpist)
 
 '''
 Pseudocode:
@@ -484,28 +611,31 @@ Get the current piston position
 Add the step size to the current position
 Set the new position
 '''
-def pist_down(gui, mems):
+def pist_down(gui, mems, memsMode):
 
-    segments = get_segments(gui)
+    if gui.checkBox_simMode.isChecked():
+        update_spectra(gui, memsMode, action = 'pist_down')
+    else:
+        segments = get_segments(gui)
 
-    if segments is not None:
+        if segments is not None:
 
-        stepsize = check_stepSize(gui.text_pistStepSize)
+            stepsize = check_stepSize(gui.text_pistStepSize)
 
-        if stepsize is not None:
-            row = segments
-            col = 0
-            table = gui.tab_memsPosition
+            if stepsize is not None:
+                row = segments
+                col = 0
+                table = gui.tab_memsPosition
 
-            for r in row:
-                segment = r
-                pist = float(table.item(r, 0).text())
-                tip = float(table.item(r, 1).text())
-                tilt = float(table.item(r, 2).text())
-                newpist = pist - stepsize
+                for r in row:
+                    segment = r
+                    pist = float(table.item(r, 0).text())
+                    tip = float(table.item(r, 1).text())
+                    tilt = float(table.item(r, 2).text())
+                    newpist = pist - stepsize
 
-                mems.set_segment(segment, newpist, tip, tilt)
-                update_cell(table, r, col, newpist)
+                    mems.set_segment(segment, newpist, tip, tilt)
+                    update_cell(table, r, col, newpist)
 
 
 def tip_up(gui, mems):
@@ -622,6 +752,10 @@ def x_up(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
+
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -644,6 +778,10 @@ def x_down(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
+
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -660,6 +798,9 @@ def y_up(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
         
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
@@ -677,6 +818,9 @@ def y_down(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
         
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
@@ -693,6 +837,9 @@ def z_up(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
         
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
@@ -709,6 +856,9 @@ def z_down(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
         
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
@@ -731,6 +881,10 @@ def roll_up(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
+
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -747,6 +901,10 @@ def roll_down(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
+        
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -763,6 +921,10 @@ def pitch_up(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
+
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -779,6 +941,10 @@ def pitch_down(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
+
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -795,6 +961,10 @@ def yaw_up(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos + stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
+
         updated_pos = mount.get_pos(axis)
         update_cell(table, row, col, updated_pos)
 
@@ -811,8 +981,13 @@ def yaw_down(gui, mount):
         pos = mount.get_pos(axis)
         newpos = int(pos - stepsize)
         mount.set_pos(axis, newpos)
+
+        while mount.in_motion(axis):
+            pass
+
         updatedpos = mount.get_pos(axis)
         update_cell(table, row, col, updatedpos)
+
 
 
 def update_cell(table, r, col, value):

@@ -43,9 +43,16 @@ class MEMS():
         '''
         Set the PTT values of a segment.
         '''
-        return self.dm.set_segment(segment, piston, xTilt, yTilt, True, True)
-    
+        err_code =  self.dm.set_segment(segment, piston, xTilt, yTilt, True, True)
 
+        if err_code == bmc.ERR_OUT_OF_LUT_RANGE:
+            err_string = "Out of range! [%d, %d, %d]\n".format(piston, xTilt, yTilt)
+            print(err_string)
+            return err_code
+        else:
+            raise Exception(self.dm.error_string(err_code))
+
+    
     def get_actuator_data(self) -> np.ndarray:
         return np.array(self.dm.get_actuator_data())
     

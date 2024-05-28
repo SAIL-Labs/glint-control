@@ -50,7 +50,11 @@ else:
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
-    triggers(ui)
+    
+    mems = None
+    mount = None
+    triggers(ui, mems, mount)
+    preprocessing(ui)
 
     MainWindow.show()
     sys.exit(app.exec_())

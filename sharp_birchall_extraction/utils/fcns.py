@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import ipdb
 import scipy
+import json
 import astropy.io.fits as fits
 from scipy.optimize import curve_fit
 from scipy.sparse.linalg import lsmr
@@ -26,7 +27,7 @@ def apply_wavel_solns(num_spec, source_instance, target_instance):
     return None
 
 
-def stacked_profiles(target_instance, abs_pos, len_spec, profiles_file_name=None, sigma=1):
+def stacked_profiles(simple_profiles_config_file=None, profiles_file_name=None):
     '''
     Generates a dictionary of profiles based on (x,y) starting positions of spectra
     (This is basically a quick way to set up simple simple horizontal profiles)
@@ -42,19 +43,24 @@ def stacked_profiles(target_instance, abs_pos, len_spec, profiles_file_name=None
         None; the value of variable target_instance.dict_profiles is updated
     '''
 
-    array_shape = np.shape(target_instance.sample_frame)
+    #array_shape = np.shape(target_instance.sample_frame)
         
     dict_profiles = {}
 
-    if profiles_file_name is None:
-        for spec_num in range(0,len(abs_pos)):
+    # abs_pos, len_spec, sigma=1, s
+
+    if simple_profiles_config_file is not None:
+        with open(simple_profiles_config_file, 'r') as file:
+            profile_data = json.load(file)
+
+        for spec_num in range(0,len(profile_data['abs_pos_00'])):
 
             # these profiles are exactly horizontal
-            dict_profiles[str(spec_num)] = simple_profile(array_shape = array_shape, 
-                                                                    x_left=abs_pos[str(spec_num)][0], 
-                                                                    y_left=abs_pos[str(spec_num)][1], 
-                                                                    len_profile=len_spec, 
-                                                                    sigma_pass=sigma)
+            dict_profiles[str(spec_num)] = simple_profile(array_shape = np.array(profile_data['array_shape']), 
+                                                                    x_left=profile_data['abs_pos_00'][str(spec_num)][0], 
+                                                                    y_left=profile_data['abs_pos_00'][str(spec_num)][1], 
+                                                                    len_profile=profile_data['len_spec'], 
+                                                                    sigma_pass=profile_data['sigma'])
         
         # add a little bit of noise for troubleshooting
         #dict_profiles[str(spec_num)] += (1e-3)*np.random.rand(np.shape(dict_profiles[str(spec_num)])[0],np.shape(dict_profiles[str(spec_num)])[1])
@@ -62,15 +68,15 @@ def stacked_profiles(target_instance, abs_pos, len_spec, profiles_file_name=None
         # store the (x,y) values of this spectrum
         ## TBD: improve this later by actually following the spine of the profile
         ## ... and allow for fractional pixels
-        target_instance.spec_x_pix[str(spec_num)] = np.arange(array_shape[1])
-        target_instance.spec_y_pix[str(spec_num)] = float(abs_pos[str(spec_num)][1]) * np.ones(array_shape[0])
+        #target_instance.spec_x_pix[str(spec_num)] = np.arange(array_shape[1])
+        #target_instance.spec_y_pix[str(spec_num)] = float(abs_pos[str(spec_num)][1]) * np.ones(array_shape[0])
 
-    else:
+    elif profiles_file_name is not None:
         # read in profiles
         profiles_data = fits.open(profiles_file_name)
         profiles = profiles_data[0].data
 
-        for spec_num in range(0,len(abs_pos)):
+        for spec_num in range(0,len(profiles[:,0,0])):
 
             # these profiles are exactly horizontal
             dict_profiles[str(spec_num)] = profiles[spec_num,:,:]
@@ -78,12 +84,13 @@ def stacked_profiles(target_instance, abs_pos, len_spec, profiles_file_name=None
         # store the (x,y) values of this spectrum
         ## TO DO: improve this later by actually following the spine of the profile
         ## ... and allow for fractional pixels
-        target_instance.spec_x_pix[str(spec_num)] = np.arange(array_shape[1])
-        target_instance.spec_y_pix[str(spec_num)] = None # float(abs_pos[str(spec_num)][1]) * np.ones(array_shape[0])
+        #target_instance.spec_x_pix[str(spec_num)] = np.arange(array_shape[1])
+        #target_instance.spec_y_pix[str(spec_num)] = None # float(abs_pos[str(spec_num)][1]) * np.ones(array_shape[0])
 
-    target_instance.dict_profiles = dict_profiles
+    else:
+        print('Error! Profiles undefined!')
 
-    return
+    return dict_profiles
 
 
 def rectangle(self, start_x, start_y, end_x, end_y):
@@ -310,18 +317,6 @@ def simple_profile_rot(array_shape, x_left, y_left, len_profile, sigma_pass=1, a
                                 lambda_pass=xgrid, 
                                 mu_pass=y_left, 
                                 sigma_pass=sigma_pass)
-    '''
-    array_profile = gauss1d_rot(x_left=x_left, 
-                                len_spec=len_profile, 
-                                x_pass=ygrid, 
-                                lambda_pass=xgrid, 
-                                mu_pass=y_left, 
-                                sigma_pass=sigma_pass, 
-                                angle_rot=angle_rot)
-    '''
-
-    #plt.imshow(array_profile)
-    #plt.show()
     
     # normalize it such that the marginalization in x (in (x,lambda) space) is 1
     # (with a perfect Gaussian profile in x this is redundant)

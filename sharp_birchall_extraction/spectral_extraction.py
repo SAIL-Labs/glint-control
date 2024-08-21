@@ -54,10 +54,16 @@ def main(config_file):
 
 
     # generate profiles: either by 
-    # 1. reading in a profiles cube, or 
-    # 2. by generating a simple horizontal profile for each spectrum (profiles_file_name = None)
+    # 1. generating a simple horizontal profile for each spectrum (profiles_file_name = None), or
+    # 2. reading in a profiles cube
+    '''
+    # simple profiles
     profiles = fcns.stacked_profiles(simple_profiles_config_file = config['file_names']['FILE_NAME_SIMPLE_PROFILES_CONFIG'],
-                                     profiles_file_name = None) # config['file_names']['FILE_NAME_PROFILES']
+                                     profiles_file_name = None)
+    '''
+    # a profile cube
+    profiles = fcns.stacked_profiles(simple_profiles_config_file = None,
+                                     profiles_file_name = config['file_names']['FILE_NAME_PROFILES'])
     
     # number of spectra
     num_spectra = len(profiles[0,:,:])

@@ -27,14 +27,41 @@ def main(config_file):
 
     # Read the config file
     config = configparser.ConfigParser(interpolation=ExtendedInterpolation())
-    #config.read('config_12_channel_cred2.ini') 
     config.read(config_file)
+
+    # make wavelength mapping?
+    wavel_map = config['options']['WAVEL_MAP']
+
+    if wavel_map == '1':
+        # read wavelength solution file (as set by config file)
+        with open(config['file_names']['FILE_NAME_PARAMS'], 'r') as file:
+            wavel_data = json.load(file)
+    elif wavel_map == '0':
+        print('No wavelength solution being made')
 
     # make directories if they don't exist yet
     [os.makedirs(value, exist_ok=True) for value in config['sys_dirs'].values()]
 
     # dummy/kludge to make function work later if this is not used
-    abs_pos_00 = [1,1,1] # needs to have length of the number of spectra
+    #abs_pos_00 = [1,1,1] # needs to have length of the number of spectra
+    # read in profiles cube, and determine number of spectra by counting up the slices
+    profiles_file_name = config['file_names']['FILE_NAME_PROFILES']
+    # read in profiles
+    profiles_data = fits.open(profiles_file_name)
+    profiles = profiles_data[0].data
+
+    ipdb.set_trace()
+
+
+    # generate profiles: either by 
+    # 1. reading in a profiles cube, or 
+    # 2. by generating a simple horizontal profile for each spectrum (profiles_file_name = None)
+    profiles = fcns.stacked_profiles(simple_profiles_config_file = config['file_names']['FILE_NAME_SIMPLE_PROFILES_CONFIG'],
+                                     profiles_file_name = None) # config['file_names']['FILE_NAME_PROFILES']
+    
+    # number of spectra
+    num_spectra = len(profiles[0,:,:])
+
 
     # directory containing files to 'extract'
     dir_spectra_parent = config['sys_dirs']['DIR_DATA'] # fake data made from real
@@ -46,23 +73,20 @@ def main(config_file):
     # retrieve a bad pixel mask: 
     badpix_mask = fits.open(config['file_names']['FILE_NAME_BADPIX'])[0].data
 
-    # make wavelength mapping?
-    wavel_map = config['options']['WAVEL_MAP']
 
-    # wavelength solution stuff
-    with open(config['file_names']['FILE_NAME_PARAMS'], 'r') as file:
-        data = json.load(file)
+
+
     # guesses of (x,y) of sampled spots
     # {"[spec number]": {"x_guesses": [x1, x2, x3, ...], "y_guesses": [y1, y2, y3, ...]
     # {"wavel_array": [wavelength_nm, wavelength_nm, ...]}
     if wavel_map == '1':
-        xy_guesses_basis_set = data['xy_guesses_basis_set'] # array of spots corresponding to narrowband spots
+        xy_guesses_basis_set = wavel_data['xy_guesses_basis_set'] # array of spots corresponding to narrowband spots
         # sampled wavelengths 
         # {"wavel_array": [wavelength_nm, wavelength_nm, ...]}
-        wavel_array = data['wavel_array'] # array of sampled wavelengths
+        wavel_array = wavel_data['wavel_array'] # array of sampled wavelengths
         # spectrum starting positions in the frame we consider to be the basis (absolute coordinates, arbit. number of spectra)
         # {"[spec number]": [[starting x], [starting y]], ...}
-        abs_pos_00 = data['abs_pos_00']
+        abs_pos_00 = wavel_data['abs_pos_00']
 
     # a sample frame (to get dims etc.)
     test_frame = fcns.read_fits_file(config['file_names']['FILE_NAME_SAMPLE'])
@@ -85,7 +109,7 @@ def main(config_file):
 
     if wavel_map == '1':
         # generate the basis wavelength solution
-        wavel_gen_obj = backbone_classes.GenWavelSoln(num_spec = len(data['rois']), 
+        wavel_gen_obj = backbone_classes.GenWavelSoln(num_spec = len(wavel_data['rois']), 
                                                     dir_read = config['sys_dirs']['DIR_PARAMS_DATA'], 
                                                     wavel_array = np.array(wavel_array))
 
@@ -173,20 +197,13 @@ def main(config_file):
             '''
 
             # initialize basic spectrum object which contains spectra info
-            spec_obj = backbone_classes.SpecData(num_spec = len(data['rois']), 
+            spec_obj = backbone_classes.SpecData(num_spec = len(wavel_data['rois']), 
                                                 len_spec = np.shape(test_data_slice)[1], 
                                                 sample_frame = test_data_slice)
 
             # instantiate extraction machinery
-            extractor = backbone_classes.Extractor(num_spec = len(data['rois']),
+            extractor = backbone_classes.Extractor(num_spec = len(wavel_data['rois']),
                                                 len_spec = np.shape(test_data_slice)[1])
-            
-            # generate a profile for each spectrum, and update the spec_obj with them
-            fcns.stacked_profiles(target_instance = spec_obj,
-                                                abs_pos = abs_pos_00,
-                                                len_spec = np.shape(test_data_slice)[1],
-                                                profiles_file_name = config['file_names']['FILE_NAME_PROFILES'],
-                                                sigma = 2)
 
             # do the actual spectral extraction, and update the spec_obj with them
             extractor.extract_spectra(target_instance=spec_obj,
@@ -198,7 +215,7 @@ def main(config_file):
 
             if wavel_map == '1':
                 # apply the wavelength solution
-                fcns.apply_wavel_solns(num_spec = len(data['rois']), 
+                fcns.apply_wavel_solns(num_spec = len(wavel_data['rois']), 
                                     source_instance = wavel_gen_obj, 
                                     target_instance = spec_obj)
 
@@ -239,4 +256,6 @@ def main(config_file):
 
 if __name__ == "__main__":
     #cProfile.run('main()', 'profile_stats.prof')
-    main(config_file = 'config_12_channel_cred2.ini')
+
+    stem = './' # put in absolute stem here
+    main(config_file = stem + 'config_12_channel_cred2.ini')

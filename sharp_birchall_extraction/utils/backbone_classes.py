@@ -135,7 +135,7 @@ def update_results(results, eta_flux, vark):
 class SpecData:
     # holds info specific to the spectra being extracted from one detector readout
 
-    def __init__(self, num_spec, len_spec, sample_frame):
+    def __init__(self, num_spec, sample_frame):
         self.num_spec = num_spec # number of spectra to extract
         self.dict_profiles = {} # dict of 2D spectral profiles
 
@@ -143,20 +143,20 @@ class SpecData:
         #self.profiles = {} # profiles of the spectra
 
         # initialize dict to hold the extracted spectra ('eta_flux')
-        self.spec_flux = {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
+        self.spec_flux = None # {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
         # dict to hold the extracted variances ('vark')
-        self.vark = {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
+        self.vark = None # {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
         # dict to hold the extracted spectra pixel x-vals
-        self.spec_x_pix = {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
+        self.spec_x_pix = None # {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
         # dict to hold the extracted spectra pixel y-vals
-        self.spec_y_pix = {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
+        self.spec_y_pix = None # {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
         # dict to hold the wavelength soln coeffs
         #self.fit_coeffs = {}
         # dict to hold the mapped wavelength abcissae
-        self.wavel_mapped = {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
+        self.wavel_mapped = None # {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
 
         # length of the spectra 
-        self.len_spec = len_spec
+        #self.len_spec = len_spec
 
 
 class GenWavelSoln:

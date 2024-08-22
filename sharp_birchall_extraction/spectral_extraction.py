@@ -42,18 +42,7 @@ def main(config_file):
     # make directories if they don't exist yet
     [os.makedirs(value, exist_ok=True) for value in config['sys_dirs'].values()]
 
-    # dummy/kludge to make function work later if this is not used
-    #abs_pos_00 = [1,1,1] # needs to have length of the number of spectra
-    # read in profiles cube, and determine number of spectra by counting up the slices
-    profiles_file_name = config['file_names']['FILE_NAME_PROFILES']
-    # read in profiles
-    profiles_data = fits.open(profiles_file_name)
-    profiles = profiles_data[0].data
-
-    ipdb.set_trace()
-
-
-    # generate profiles: either by 
+    # generate spectral profiles: either by 
     # 1. generating a simple horizontal profile for each spectrum (profiles_file_name = None), or
     # 2. reading in a profiles cube
     '''
@@ -65,12 +54,8 @@ def main(config_file):
     profiles = fcns.stacked_profiles(simple_profiles_config_file = None,
                                      profiles_file_name = config['file_names']['FILE_NAME_PROFILES'])
     
-    # number of spectra
-    num_spectra = len(profiles[0,:,:])
-
-
-    # directory containing files to 'extract'
-    dir_spectra_parent = config['sys_dirs']['DIR_DATA'] # fake data made from real
+    # directory containing readouts to extract
+    dir_spectra_parent = config['sys_dirs']['DIR_DATA']
     # Glob the directories inside the specified directory
     dir_spectra_read = glob.glob(dir_spectra_parent + '*series*/')
     # directory to which we will write spectral solutions
@@ -78,9 +63,6 @@ def main(config_file):
 
     # retrieve a bad pixel mask: 
     badpix_mask = fits.open(config['file_names']['FILE_NAME_BADPIX'])[0].data
-
-
-
 
     # guesses of (x,y) of sampled spots
     # {"[spec number]": {"x_guesses": [x1, x2, x3, ...], "y_guesses": [y1, y2, y3, ...]
@@ -128,11 +110,14 @@ def main(config_file):
         # generate solution coefficients
         wavel_gen_obj.gen_coeffs(target_instance=wavel_gen_obj)
 
-        # read in a lamp basis image (to find offsets later)
+        # read in a lamp basis image (to find x,y-offsets later)
         wavel_gen_obj.add_basis_image(file_name = config['file_names']['FILE_NAME_BASISLAMP'])
 
+    '''
     if (config['options']['ROT_LEFT'] == '1'): wavel_gen_obj.lamp_basis_frame = np.rot90(wavel_gen_obj.lamp_basis_frame, k=1)
+    '''
 
+    '''
     # retrieve lamp image
     lamp_file_name = glob.glob(config['file_names']['FILE_NAME_THISLAMP'])
     lamp_data = fits.open(lamp_file_name[0]) # list of files should just have one element
@@ -141,6 +126,7 @@ def main(config_file):
 
     # rotate image CCW? (to get spectra along x-axis)
     if (config['options']['ROT_LEFT'] == '1'): lamp_array_this = np.rot90(lamp_array_this, k=1)
+    '''
 
     # retrieve a variance image
     # (do not fix bad pixels! causes math to fail)
@@ -158,6 +144,7 @@ def main(config_file):
     
     # Get the initial list of files in the directory
     initial_files = os.listdir(dir_spectra_parent)
+
 
     # Start monitoring the directory for new files
     while True:
@@ -188,6 +175,7 @@ def main(config_file):
                     readout_data = hdul[0].data[0,:,:]
             else:
                 readout_data = hdul[0].data
+            ipdb.set_trace()
             # some ad hoc bad pix fixing ## ## TODO: make better badpix mask
             readout_data[readout_data<0] = 0
             readout_data = fcns.fix_bad(array_pass=readout_data, badpix_pass=badpix_mask)
@@ -201,10 +189,15 @@ def main(config_file):
             readout_data = shift.shiftnd(readout_data, (-yoff, -xoff))
             readout_variance = shift.shiftnd(readout_variance, (-yoff, -xoff))
             '''
+            ipdb.set_trace()
 
             # initialize basic spectrum object which contains spectra info
-            spec_obj = backbone_classes.SpecData(num_spec = len(wavel_data['rois']), 
+            '''
+            spec_obj = backbone_classes.SpecData(num_spec = len(profiles), 
                                                 len_spec = np.shape(test_data_slice)[1], 
+                                                sample_frame = test_data_slice)
+            '''
+            spec_obj = backbone_classes.SpecData(num_spec = len(profiles), 
                                                 sample_frame = test_data_slice)
 
             # instantiate extraction machinery

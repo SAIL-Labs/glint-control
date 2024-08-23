@@ -54,6 +54,8 @@ def main(config_file):
     profiles = fcns.stacked_profiles(simple_profiles_config_file = None,
                                      profiles_file_name = config['file_names']['FILE_NAME_PROFILES'])
     
+    ipdb.set_trace()
+    
     # directory containing readouts to extract
     dir_spectra_parent = config['sys_dirs']['DIR_DATA']
     # Glob the directories inside the specified directory
@@ -175,7 +177,7 @@ def main(config_file):
                     readout_data = hdul[0].data[0,:,:]
             else:
                 readout_data = hdul[0].data
-            ipdb.set_trace()
+
             # some ad hoc bad pix fixing ## ## TODO: make better badpix mask
             readout_data[readout_data<0] = 0
             readout_data = fcns.fix_bad(array_pass=readout_data, badpix_pass=badpix_mask)
@@ -189,7 +191,6 @@ def main(config_file):
             readout_data = shift.shiftnd(readout_data, (-yoff, -xoff))
             readout_variance = shift.shiftnd(readout_variance, (-yoff, -xoff))
             '''
-            ipdb.set_trace()
 
             # initialize basic spectrum object which contains spectra info
             '''
@@ -198,11 +199,16 @@ def main(config_file):
                                                 sample_frame = test_data_slice)
             '''
             spec_obj = backbone_classes.SpecData(num_spec = len(profiles), 
-                                                sample_frame = test_data_slice)
+                                                sample_frame = test_data_slice, 
+                                                profiles = profiles)
+            ipdb.set_trace()
+            
+            ## ## CONTINUE HERE
 
             # instantiate extraction machinery
-            extractor = backbone_classes.Extractor(num_spec = len(wavel_data['rois']),
+            extractor = backbone_classes.Extractor(num_spec = len(profiles),
                                                 len_spec = np.shape(test_data_slice)[1])
+            ipdb.set_trace()
 
             # do the actual spectral extraction, and update the spec_obj with them
             extractor.extract_spectra(target_instance=spec_obj,
@@ -211,6 +217,7 @@ def main(config_file):
                                                 n_rd=0, 
                                                 process_method = config['options']['PROCESS_METHOD'],
                                                 fyi_plot=False)
+            ipdb.set_trace()
 
             if wavel_map == '1':
                 # apply the wavelength solution

@@ -35,7 +35,7 @@ def worker(variables_to_pass):
     Does detector-array-column specific reductions with matrix math
     '''
 
-    dict_profiles_array, D, array_variance, n_rd = variables_to_pass
+    profiles_array, D, array_variance, n_rd = variables_to_pass
 
     # tile everything, for the same data and extraction
 
@@ -45,10 +45,10 @@ def worker(variables_to_pass):
     '''
     D_big = rearrange_into_big_2d(matrix_input=D, P=2)
     array_variance_big = rearrange_into_big_2d(array_variance, P=2)
-    dict_profiles_array_big = rearrange_into_big_2d(dict_profiles_array[:,:,0], P=2)
+    profiles_array_big = rearrange_into_big_2d(profiles_array[:,:,0], P=2)
 
     t0 = time.time()
-    phi = dict_profiles_array_big # [:, col]
+    phi = profiles_array_big # [:, col]
     D = D_big[:, col]
     array_variance_big = array_variance_big[:, col]
     '''
@@ -59,12 +59,12 @@ def worker(variables_to_pass):
 
     # this chunk works
     '''
-    phi = dict_profiles_array[:, :, col]
+    phi = profiles_array[:, :, col]
     D = D[:, col]
     array_variance_big = array_variance[:, col]
     '''
 
-    phi = dict_profiles_array 
+    phi = profiles_array 
  
     array_variance_big = array_variance
 
@@ -100,8 +100,9 @@ def worker(variables_to_pass):
 
     # Initialize an array to store the results
     # TO DO: GENERALIZE THIS TO FIT THE LENGTH OF THE INPUT SPECTRA
-    eta_flux_mat_T_reshaped = np.zeros((3, 320)) # (# spectra, #x-pixels)
-    var_mat_T_reshaped = np.zeros((3, 320))
+    shape = (len(profiles_array), np.shape(array_variance)[1]) # (# spectra, # x-pixels)
+    eta_flux_mat_T_reshaped = np.zeros(shape)
+    var_mat_T_reshaped = np.zeros(shape)
 
     # loop over cols
     for i in range(np.shape(eta_flux_mat_T_reshaped)[1]):
@@ -118,7 +119,6 @@ def worker(variables_to_pass):
             eta_flux_mat_T_reshaped[:, i] = np.nan * np.ones(12)
             var_mat_T_reshaped[:, i] = np.nan * np.ones(12)
 
-    
     return eta_flux_mat_T_reshaped, var_mat_T_reshaped
 
 
@@ -135,12 +135,12 @@ def update_results(results, eta_flux, vark):
 class SpecData:
     # holds info specific to the spectra being extracted from one detector readout
 
-    def __init__(self, num_spec, sample_frame):
+    def __init__(self, num_spec, sample_frame, profiles):
         self.num_spec = num_spec # number of spectra to extract
-        self.dict_profiles = {} # dict of 2D spectral profiles
+        self.dict_profiles = profiles # dict of 2D spectral profiles
 
         self.sample_frame = sample_frame # an example frame, which will be used for getting dims, etc.
-        #self.profiles = {} # profiles of the spectra
+        #self.profiles = profiles # profiles of the spectra
 
         # initialize dict to hold the extracted spectra ('eta_flux')
         self.spec_flux = None # {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
@@ -285,8 +285,10 @@ class Extractor():
         vark = target_instance.vark
         dict_profiles = target_instance.dict_profiles
 
+        ipdb.set_trace()
+
         # convert dictionary into a numpy array
-        dict_profiles_array = np.array(list(dict_profiles.values()))
+        profiles_array = np.array(list(dict_profiles.values()))
 
         # silence warnings about non-convergence
         #warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -297,11 +299,15 @@ class Extractor():
             plt.subplot(1, 2, 1)
             plt.imshow(D/np.std(D), norm=LogNorm())
             plt.subplot(1, 2, 2)
-            plt.imshow(D/np.std(D) + np.sum(dict_profiles_array, axis=0), norm=LogNorm(vmin=1e-3, vmax=1))
+            plt.imshow(D/np.std(D) + np.sum(profiles_array, axis=0), norm=LogNorm(vmin=1e-3, vmax=1))
             plt.show()
 
+        ipdb.set_trace()
+
         # pack variables other than the column number into an object that can be passed to function with multiprocessing
-        variables_to_pass = [dict_profiles_array, D, array_variance, n_rd]
+        variables_to_pass = [profiles_array, D, array_variance, n_rd]
+
+        ipdb.set_trace()
 
         # treat the columns in series or in parallel?
         if process_method == 'series':

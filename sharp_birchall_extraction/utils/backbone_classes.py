@@ -37,33 +37,6 @@ def worker(variables_to_pass):
 
     profiles_array, D, array_variance, n_rd = variables_to_pass
 
-    # tile everything, for the same data and extraction
-
-    ### begin tiling test
-
-    # P>1 doesn't work yet
-    '''
-    D_big = rearrange_into_big_2d(matrix_input=D, P=2)
-    array_variance_big = rearrange_into_big_2d(array_variance, P=2)
-    profiles_array_big = rearrange_into_big_2d(profiles_array[:,:,0], P=2)
-
-    t0 = time.time()
-    phi = profiles_array_big # [:, col]
-    D = D_big[:, col]
-    array_variance_big = array_variance_big[:, col]
-    '''
-    #ipdb.set_trace()
-    ### end tiling test
-
-
-
-    # this chunk works
-    '''
-    phi = profiles_array[:, :, col]
-    D = D[:, col]
-    array_variance_big = array_variance[:, col]
-    '''
-
     phi = profiles_array 
  
     array_variance_big = array_variance
@@ -285,8 +258,6 @@ class Extractor():
         vark = target_instance.vark
         dict_profiles = target_instance.dict_profiles
 
-        ipdb.set_trace()
-
         # convert dictionary into a numpy array
         profiles_array = np.array(list(dict_profiles.values()))
 
@@ -302,12 +273,9 @@ class Extractor():
             plt.imshow(D/np.std(D) + np.sum(profiles_array, axis=0), norm=LogNorm(vmin=1e-3, vmax=1))
             plt.show()
 
-        ipdb.set_trace()
 
         # pack variables other than the column number into an object that can be passed to function with multiprocessing
         variables_to_pass = [profiles_array, D, array_variance, n_rd]
-
-        ipdb.set_trace()
 
         # treat the columns in series or in parallel?
         if process_method == 'series':

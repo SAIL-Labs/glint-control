@@ -44,17 +44,15 @@ def main(config_file):
 
     # generate spectral profiles: either by 
     # 1. generating a simple horizontal profile for each spectrum (profiles_file_name = None), or
-    # 2. reading in a profiles cube
-    '''
-    # simple profiles
-    profiles = fcns.stacked_profiles(simple_profiles_config_file = config['file_names']['FILE_NAME_SIMPLE_PROFILES_CONFIG'],
-                                     profiles_file_name = None)
-    '''
-    # a profile cube
-    profiles = fcns.stacked_profiles(simple_profiles_config_file = None,
-                                     profiles_file_name = config['file_names']['FILE_NAME_PROFILES'])
-    
-    ipdb.set_trace()
+    # 2. reading in a profiles cube from file
+    if config['options']['PROFILE_SOURCE'] == 'simple':
+        simple_profiles_config_file = config['file_names']['FILE_NAME_SIMPLE_PROFILES_CONFIG']
+        profiles_file_name = None
+    elif config['options']['PROFILE_SOURCE'] == 'from_file':
+        simple_profiles_config_file = None
+        profiles_file_name = config['file_names']['FILE_NAME_PROFILES']
+
+    profiles = fcns.stacked_profiles(simple_profiles_config_file, profiles_file_name)
     
     # directory containing readouts to extract
     dir_spectra_parent = config['sys_dirs']['DIR_DATA']
@@ -201,14 +199,12 @@ def main(config_file):
             spec_obj = backbone_classes.SpecData(num_spec = len(profiles), 
                                                 sample_frame = test_data_slice, 
                                                 profiles = profiles)
-            ipdb.set_trace()
             
             ## ## CONTINUE HERE
 
             # instantiate extraction machinery
             extractor = backbone_classes.Extractor(num_spec = len(profiles),
                                                 len_spec = np.shape(test_data_slice)[1])
-            ipdb.set_trace()
 
             # do the actual spectral extraction, and update the spec_obj with them
             extractor.extract_spectra(target_instance=spec_obj,
@@ -217,7 +213,7 @@ def main(config_file):
                                                 n_rd=0, 
                                                 process_method = config['options']['PROCESS_METHOD'],
                                                 fyi_plot=False)
-            ipdb.set_trace()
+            
 
             if wavel_map == '1':
                 # apply the wavelength solution

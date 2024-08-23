@@ -51,7 +51,6 @@ def main(config_file):
     elif config['options']['PROFILE_SOURCE'] == 'from_file':
         simple_profiles_config_file = None
         profiles_file_name = config['file_names']['FILE_NAME_PROFILES']
-
     profiles = fcns.stacked_profiles(simple_profiles_config_file, profiles_file_name)
     
     # directory containing readouts to extract
@@ -191,11 +190,6 @@ def main(config_file):
             '''
 
             # initialize basic spectrum object which contains spectra info
-            '''
-            spec_obj = backbone_classes.SpecData(num_spec = len(profiles), 
-                                                len_spec = np.shape(test_data_slice)[1], 
-                                                sample_frame = test_data_slice)
-            '''
             spec_obj = backbone_classes.SpecData(num_spec = len(profiles), 
                                                 sample_frame = test_data_slice, 
                                                 profiles = profiles)
@@ -261,3 +255,4 @@ if __name__ == "__main__":
 
     stem = './' # put in absolute stem here
     main(config_file = stem + 'config_12_channel_cred2.ini')
+    #main(config_file = stem + 'config_fake_seeing_20240509.ini')

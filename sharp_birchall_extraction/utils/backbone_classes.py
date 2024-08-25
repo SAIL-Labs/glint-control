@@ -120,13 +120,13 @@ class SpecData:
         # dict to hold the extracted variances ('vark')
         self.vark = None # {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
         # dict to hold the extracted spectra pixel x-vals
-        self.spec_x_pix = None # {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
+        self.spec_x_pix = {str(i): np.zeros(np.shape(sample_frame)[1]) for i in range(self.num_spec)} # TO DO: make this spectral length more flexible and follow the spline
         # dict to hold the extracted spectra pixel y-vals
-        self.spec_y_pix = None # {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
+        self.spec_y_pix = {str(i): np.zeros(np.shape(sample_frame)[1]) for i in range(self.num_spec)}
         # dict to hold the wavelength soln coeffs
         #self.fit_coeffs = {}
         # dict to hold the mapped wavelength abcissae
-        self.wavel_mapped = None # {str(i): np.zeros(len_spec) for i in range(self.num_spec)}
+        self.wavel_mapped = {str(i): np.zeros(np.shape(sample_frame)[1]) for i in range(self.num_spec)}
 
         # length of the spectra 
         #self.len_spec = len_spec
@@ -135,18 +135,42 @@ class SpecData:
 class GenWavelSoln:
     # contains machinery for generating wavelength solution
 
-    def __init__(self, num_spec, dir_read, wavel_array):
+    def __init__(self, num_spec, dir_read, wavel_array, xy_narrowband_spot_guesses):
         self.num_spec = num_spec
-        self.dir_read = dir_read # directory containing basis set images
         self.wavel_array = wavel_array # array of wavelengths (any units) in order of sorted filenames
         self.fit_coeffs = {} # dict to hold the wavelength soln coeffs
-        self.wavel_soln_data = {str(i): {'x_pix_locs': np.zeros(len(wavel_array)),
-                                         'y_pix_locs': np.zeros(len(wavel_array))} for i in range(self.num_spec)} # dict to hold the (x,y) of the wavelength soln basis set
+        #self.wavel_soln_data = {}
+        self.wavel_soln_basis_set = {str(i): {'x_narrowband_spot_pix_locs': [], 'y_narrowband_spot_pix_locs': []} for i in range(12)}
+        #self.wavel_soln_basis_set['x_narrowband_spot_pix_locs']
+        #self.wavel_soln_data = {}
+        self.xy_narrowband_spot_guesses = xy_narrowband_spot_guesses
 
-    def make_basis_cube(self):
+        #x_pix_locs, y_pix_locs = xy_narrowband_spot_guesses # the narrowband spot location guesses
+        '''
+        for i in range(num_spec):
+            self.wavel_soln_basis_set[str(i)] = 
+            # true coords along spectra
+            #self.wavel_soln_data[str(i)] = {'x_pix_locs': x_pix_locs[str(i)],'y_pix_locs': y_pix_locs[str(i)]}
+            # coords of narrowband basis set spots
+            self.wavel_soln_basis_setself.wavel_soln_data[str(i)] = {'x_narrowband_spot_pix_locs': x_pix_locs[str(i)],'y_narrowband_spot_pix_locs': y_pix_locs[str(i)]}
+        '''
+            
+    def make_basis_cube(self, dir_read):
+        # make a cube, if the slices are separate files
+        # risky! would require sort operation to align with wavelengths
 
-        file_list = sorted(glob.glob(self.dir_read + '*.fits'))
+        # dir_read: the directory containing the files
+
+        file_list = sorted(glob.glob(dir_read + '*.fits'))
         cube = np.stack([fits.getdata(file) for file in file_list], axis=0)
+
+        return cube
+    
+    def read_basis_cube(self, file_name):
+        # read in cube which is basis set of data made with narrowband imaging to 
+        # form wavelength solution
+
+        cube = fits.getdata(file_name)
 
         return cube
     
@@ -165,7 +189,7 @@ class GenWavelSoln:
 
         # loop over spectra
         for key in xy_guesses:
-
+            # loop over slices of the narrowband basis cube
             for slice_num in range(0,len(basis_cube[:,0,0])):
 
                 data = basis_cube[slice_num,:,:]
@@ -174,9 +198,10 @@ class GenWavelSoln:
                                         xy_guesses[key]['y_guesses'][slice_num], 
                                         box_size=5,
                                 centroid_func=centroid_com)
-            
-                self.wavel_soln_data[key]['x_pix_locs'][slice_num] = x
-                self.wavel_soln_data[key]['y_pix_locs'][slice_num] = y
+
+                self.wavel_soln_basis_set[key]['x_narrowband_spot_pix_locs'].append(x.item())
+                self.wavel_soln_basis_set[key]['y_narrowband_spot_pix_locs'].append(y.item())
+
 
         return None
     
@@ -201,13 +226,14 @@ class GenWavelSoln:
         # - x_pix_locs: x-locations of empirical spot data on detector (can be fractional)
         # - y_pix_locs: y-locations " " 
         # - lambda_pass: wavelengths corresponding to spots
-        wavel_soln_dict = self.wavel_soln_data
+
+        wavel_soln_dict = self.wavel_soln_basis_set
 
         # for each spectrum, take the (xs, ys, lambdas) and generate coeffs (a,b,c)
         for i in range(0,self.num_spec):
 
-            x_pix_locs = wavel_soln_dict[str(i)]['x_pix_locs']
-            y_pix_locs = wavel_soln_dict[str(i)]['y_pix_locs']
+            x_pix_locs = np.array(wavel_soln_dict[str(i)]['x_narrowband_spot_pix_locs'])
+            y_pix_locs = np.array(wavel_soln_dict[str(i)]['y_narrowband_spot_pix_locs'])
             lambda_pass = self.wavel_array
 
             # fit coefficients based on (x,y) coords of given spectrum and the set of basis wavelengths

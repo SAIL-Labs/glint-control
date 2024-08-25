@@ -4,27 +4,69 @@ import ipdb
 import scipy
 import json
 import astropy.io.fits as fits
+from scipy.interpolate import CubicSpline
 from scipy.optimize import curve_fit
 from scipy.sparse.linalg import lsmr
 from astropy.convolution import interpolate_replace_nans
 import glob
 
-def apply_wavel_solns(num_spec, source_instance, target_instance):
+def apply_wavel_solns(num_spec, x_vals_spectra, y_vals_spectra, source_instance, target_instance):
     '''
     Take wavelength fit coefficients from the source_instance, and use them to map wavelengths to target_instance
     '''
 
+    # update the x-pix and y-pix values of the spectra
+    #target_instance.spec_x_pix[str(i)]
+
     for i in range(0,num_spec):
 
+        # the coefficients of the fits
         a_coeff = source_instance.fit_coeffs[str(i)][0]
         b_coeff = source_instance.fit_coeffs[str(i)][1]
         f_coeff = source_instance.fit_coeffs[str(i)][2]
 
-        X = (target_instance.spec_x_pix[str(i)], target_instance.spec_y_pix[str(i)])
+        X = (x_vals_spectra[str(i)], y_vals_spectra[str(i)])
 
         target_instance.wavel_mapped[str(i)] = wavel_from_func(X, a_coeff, b_coeff, f_coeff)
 
     return None
+
+
+def find_xy_spectra(profiles):
+
+    # loop through the profile slices, and determine the x, y values along the spectrum
+
+    # x-values: simple integer values along x
+    # n.b. requires profiles to be a 3D cube, not just 2D array
+    spec_x_pix = {str(i): np.arange(np.shape(profiles['0'])[1]) for i in range(len(profiles))}
+    # y-values: initialize for containing interpolated values
+    spec_y_pix = {}
+
+    # y-values: find the maximum along the column, with interpolation
+    oversample = 10 # oversampling factor
+    
+    for profile_num in range(len(profiles)):
+        max_loc_array = []
+        for col_num in range(0, np.shape(profiles['0'])[1]):
+            x = np.arange(len(profiles['0'][:,col_num])) # 'x' is actually 'pixels along y on the array'
+            y = profiles[str(profile_num)][:,col_num] # amplitude of the cross-section of the profile
+            spl = CubicSpline(x, y) # make spline
+            xnew = np.linspace(np.min(x), np.max(x), num = oversample * len(x)) # oversampled y-vals
+            max_loc_oversample = xnew[spl(xnew) == np.max(spl(xnew))][0]
+            max_loc = max_loc_oversample
+            max_loc_array.append(max_loc)
+        
+        spec_y_pix[str(profile_num)] = max_loc_array
+
+        '''
+        import matplotlib.pyplot as plt
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+        ax1.imshow(profiles[str(profile_num)], origin='lower', aspect='auto', cmap='viridis')
+        ax2.scatter(spec_x_pix[str(profile_num)], spec_y_pix[str(profile_num)])
+        plt.show()
+        '''
+
+    return spec_x_pix, spec_y_pix
 
 
 def stacked_profiles(simple_profiles_config_file=None, profiles_file_name=None):

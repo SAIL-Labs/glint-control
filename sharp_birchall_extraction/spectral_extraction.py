@@ -255,5 +255,5 @@ if __name__ == "__main__":
     #cProfile.run('main()', 'profile_stats.prof')
 
     stem = './' # put in absolute stem here
-    main(config_file = stem + 'config_12_channel_cred2.ini')
-    #main(config_file = stem + 'config_fake_seeing_20240509.ini')
+    main(config_file = stem + 'config_12_channel_cred2.ini') # 12 channel GLINT data, with wavelength solution
+    #main(config_file = stem + 'config_fake_seeing_20240509.ini') # 3 channel PL data with fake seeing, without wavelength solution

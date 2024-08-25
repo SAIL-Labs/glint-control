@@ -34,7 +34,7 @@ def main(config_file):
 
     if wavel_map == '1':
         # read wavelength solution file (as set by config file)
-        with open(config['file_names']['FILE_NAME_PARAMS'], 'r') as file:
+        with open(config['file_names']['FILE_NAME_WAVEL_PARAMS'], 'r') as file:
             wavel_data = json.load(file)
     elif wavel_map == '0':
         print('No wavelength solution being made')
@@ -52,6 +52,8 @@ def main(config_file):
         simple_profiles_config_file = None
         profiles_file_name = config['file_names']['FILE_NAME_PROFILES']
     profiles = fcns.stacked_profiles(simple_profiles_config_file, profiles_file_name)
+    # find the individual x, y coordinates along the spectra based on the profiles
+    x_coords_spectra_true, y_coords_spectra_true = fcns.find_xy_spectra(profiles = profiles)
     
     # directory containing readouts to extract
     dir_spectra_parent = config['sys_dirs']['DIR_DATA']
@@ -62,18 +64,6 @@ def main(config_file):
 
     # retrieve a bad pixel mask: 
     badpix_mask = fits.open(config['file_names']['FILE_NAME_BADPIX'])[0].data
-
-    # guesses of (x,y) of sampled spots
-    # {"[spec number]": {"x_guesses": [x1, x2, x3, ...], "y_guesses": [y1, y2, y3, ...]
-    # {"wavel_array": [wavelength_nm, wavelength_nm, ...]}
-    if wavel_map == '1':
-        xy_guesses_basis_set = wavel_data['xy_guesses_basis_set'] # array of spots corresponding to narrowband spots
-        # sampled wavelengths 
-        # {"wavel_array": [wavelength_nm, wavelength_nm, ...]}
-        wavel_array = wavel_data['wavel_array'] # array of sampled wavelengths
-        # spectrum starting positions in the frame we consider to be the basis (absolute coordinates, arbit. number of spectra)
-        # {"[spec number]": [[starting x], [starting y]], ...}
-        abs_pos_00 = wavel_data['abs_pos_00']
 
     # a sample frame (to get dims etc.)
     test_frame = fcns.read_fits_file(config['file_names']['FILE_NAME_SAMPLE'])
@@ -95,19 +85,29 @@ def main(config_file):
     '''
 
     if wavel_map == '1':
-        # generate the basis wavelength solution
-        wavel_gen_obj = backbone_classes.GenWavelSoln(num_spec = len(wavel_data['rois']), 
-                                                    dir_read = config['sys_dirs']['DIR_PARAMS_DATA'], 
-                                                    wavel_array = np.array(wavel_array))
+        # guesses of (x,y) of sampled spots
+        # {"[spec number]": {"x_guesses": [x1, x2, x3, ...], "y_guesses": [y1, y2, y3, ...]
+        # {"wavel_array": [wavelength_nm, wavelength_nm, ...]}
+        xy_guesses_basis_set = wavel_data['xy_guesses_basis_set'] # array of spots corresponding to narrowband spots
+        # sampled wavelengths 
+        # {"wavel_array": [wavelength_nm, wavelength_nm, ...]}
+        wavel_array = wavel_data['wavel_array'] # array of sampled wavelengths
 
-        basis_cube = wavel_gen_obj.make_basis_cube()
+        # generate the basis wavelength solution
+        # xy_pix_locs = (x_coords_spectra_true, y_coords_spectra_true)
+        wavel_gen_obj = backbone_classes.GenWavelSoln(num_spec = len(profiles), 
+                                                    dir_read = config['sys_dirs']['DIR_PARAMS_DATA'], 
+                                                    wavel_array = np.array(wavel_array), 
+                                                    xy_narrowband_spot_guesses = xy_guesses_basis_set)
+
+        basis_cube = wavel_gen_obj.read_basis_cube(file_name = config['file_names']['FILE_NAME_WAVEL_BASIS_CUBE'])
 
         # find (x,y) of narrowband (i.e., point-like) spectra in each frame of basis cube
         wavel_gen_obj.find_xy_narrowbands(xy_guesses = xy_guesses_basis_set,
                                         basis_cube = basis_cube)
         
         # generate solution coefficients
-        wavel_gen_obj.gen_coeffs(target_instance=wavel_gen_obj)
+        wavel_gen_obj.gen_coeffs(target_instance = wavel_gen_obj)
 
         # read in a lamp basis image (to find x,y-offsets later)
         wavel_gen_obj.add_basis_image(file_name = config['file_names']['FILE_NAME_BASISLAMP'])
@@ -193,8 +193,6 @@ def main(config_file):
             spec_obj = backbone_classes.SpecData(num_spec = len(profiles), 
                                                 sample_frame = test_data_slice, 
                                                 profiles = profiles)
-            
-            ## ## CONTINUE HERE
 
             # instantiate extraction machinery
             extractor = backbone_classes.Extractor(num_spec = len(profiles),
@@ -211,7 +209,10 @@ def main(config_file):
 
             if wavel_map == '1':
                 # apply the wavelength solution
-                fcns.apply_wavel_solns(num_spec = len(wavel_data['rois']), 
+
+                fcns.apply_wavel_solns(num_spec = len(profiles), 
+                                       x_vals_spectra = x_coords_spectra_true, 
+                                       y_vals_spectra = y_coords_spectra_true,
                                     source_instance = wavel_gen_obj, 
                                     target_instance = spec_obj)
 

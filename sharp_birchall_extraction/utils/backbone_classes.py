@@ -42,23 +42,26 @@ def worker(variables_to_pass):
     array_variance_big = array_variance
 
     # Compute S^-2
-    S_inv_squared = 1 / array_variance_big  # Shape: (M,) # CORRECT
+    S_inv_squared = 1 / array_variance_big  # Shape: (M,)
+    ipdb.set_trace()
 
     # Compute the element-wise product of phi and S^-2
     phi_S = phi * S_inv_squared  # Shape: (N, M) - broadcasting S_inv_squared across rows
+    ipdb.set_trace()
 
-    #c_matrix_big = np.dot( phi_S, phi.T )
+    # Sharp+ Eqn. 9
     c_matrix_big = np.einsum('ijk,jlk->ilk', phi_S, np.transpose(phi, (1, 0, 2)))
-    #c_matrix_big = np.dot( phi_S, np.transpose(phi, (1, 0, 2)) )
+    ipdb.set_trace()
 
-    # Compute b
-    #b_matrix_big = np.dot( phi, np.multiply(D, S_inv_squared) )  # np.matmul works too, since one matrix is 1D # CORRECT
-    b_matrix_big = np.einsum('ijk,jk->ik', phi, np.multiply(D, S_inv_squared))
+    # Sharp+ Eqn. 10
+    # stays put
+    b_matrix_big = np.einsum('ijk,jk->ik', phi, np.multiply(D, S_inv_squared)) # D
+    ipdb.set_trace()
 
-    #c_mat_prime = np.dot( phi, phi.T )
+    # Sharp+ Eqn. 19
     c_mat_prime = np.einsum('ijk,jlk->ilk', phi, np.transpose(phi, (1, 0, 2)))
-    #b_mat_prime = np.dot( phi, (array_variance_big - n_rd**2) )
     b_mat_prime = np.einsum('ijk,jk->ik', phi, array_variance_big - n_rd**2)
+    ipdb.set_trace()
 
     # replace non-finite values with a median value to let solution work
     finite_values_c = c_matrix_big[np.isfinite(c_matrix_big)]
@@ -66,11 +69,13 @@ def worker(variables_to_pass):
     non_finite_mask_c = ~np.isfinite(c_matrix_big)
     c_matrix_big[non_finite_mask_c] = median_value_c # Replace non-finite values with the median value
 
+    # stays put
     finite_values_b = b_matrix_big[np.isfinite(b_matrix_big)]
     median_value_b = np.median(finite_values_b)
     non_finite_mask_b = ~np.isfinite(b_matrix_big) # mask for the non-finite values
     b_matrix_big[non_finite_mask_b] = median_value_b # Replace non-finite values with the median value
 
+    # stays put
     # Initialize an array to store the results
     # TO DO: GENERALIZE THIS TO FIT THE LENGTH OF THE INPUT SPECTRA
     shape = (len(profiles_array), np.shape(array_variance)[1]) # (# spectra, # x-pixels)
@@ -83,6 +88,7 @@ def worker(variables_to_pass):
             # Solve the least squares problem for each slice
             result_eta, _, _, _ = lstsq(c_matrix_big[:, :, i], b_matrix_big[:, i])
             result_var, _, _, _ = lstsq(c_mat_prime[:, :, i], b_mat_prime[:, i])
+            ipdb.set_trace()
             #result_eta, _, _, _ = np.linalg.lstsq(c_matrix_big[:, :, i], b_matrix_big[:, i], rcond=None)
             #result_var, _, _, _ = np.linalg.lstsq(c_mat_prime[:, :, i], b_mat_prime[:, i], rcond=None)
             # Store the result

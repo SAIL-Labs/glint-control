@@ -72,7 +72,20 @@ def main(config_file):
     else:
         test_data_slice = test_frame
     if (config['options']['ROT_LEFT'] == '1'): test_data_slice = np.rot90(test_data_slice, k=1)
-    #test_variance_slice = test_frame[1,:,:]
+
+    # retrieve a variance image
+    # (do not fix bad pixels! causes math to fail)
+    readout_variance = fits.open(config['file_names']['FILE_NAME_VAR'])[0].data
+    readout_variance[readout_variance == 0] = np.nanmedian(readout_variance) # replace 0.0 pixels (since this will lead to infs later)
+    readout_variance[readout_variance < 0] = np.nanmedian(readout_variance)
+
+    ## ## CONTINUE HERE: DOES THIS WORK?
+    # calculate the things that will be needed when extracting spectra from individual readouts
+    spec_extraction = backbone_classes.Extractor(num_spec=len(profiles), 
+                                                 len_spec=np.shape(test_data_slice)[1], 
+                                                 phi=profiles, 
+                                                 array_variance=readout_variance, 
+                                                 n_rd=0)
 
     # fake data for quick checks: uncomment this section to get spectra which are the same as the profiles
     '''
@@ -112,6 +125,7 @@ def main(config_file):
         # read in a lamp basis image (to find x,y-offsets later)
         wavel_gen_obj.add_basis_image(file_name = config['file_names']['FILE_NAME_BASISLAMP'])
 
+
     '''
     if (config['options']['ROT_LEFT'] == '1'): wavel_gen_obj.lamp_basis_frame = np.rot90(wavel_gen_obj.lamp_basis_frame, k=1)
     '''
@@ -126,12 +140,6 @@ def main(config_file):
     # rotate image CCW? (to get spectra along x-axis)
     if (config['options']['ROT_LEFT'] == '1'): lamp_array_this = np.rot90(lamp_array_this, k=1)
     '''
-
-    # retrieve a variance image
-    # (do not fix bad pixels! causes math to fail)
-    readout_variance = fits.open(config['file_names']['FILE_NAME_VAR'])[0].data
-    readout_variance[readout_variance == 0] = np.nanmedian(readout_variance) # replace 0.0 pixels (since this will lead to infs later)
-    readout_variance[readout_variance < 0] = np.nanmedian(readout_variance)
 
     if (config['options']['ROT_LEFT'] == '1'): readout_variance = np.rot90(readout_variance, k=1)
 
@@ -189,23 +197,16 @@ def main(config_file):
             readout_variance = shift.shiftnd(readout_variance, (-yoff, -xoff))
             '''
 
-            # initialize basic spectrum object which contains spectra info
+            # initialize basic spectrum object which contains info specific to this spectrum
             spec_obj = backbone_classes.SpecData(num_spec = len(profiles), 
                                                 sample_frame = test_data_slice, 
                                                 profiles = profiles)
 
-            # instantiate extraction machinery
-            extractor = backbone_classes.Extractor(num_spec = len(profiles),
-                                                len_spec = np.shape(test_data_slice)[1])
-
             # do the actual spectral extraction, and update the spec_obj with them
-            extractor.extract_spectra(target_instance=spec_obj,
-                                                D=readout_data, 
-                                                array_variance=readout_variance, 
-                                                n_rd=0, 
-                                                process_method = config['options']['PROCESS_METHOD'],
-                                                fyi_plot=False)
-            
+            spec_extraction.extract_one_frame(target_instance=spec_obj, 
+                                              D=readout_data, 
+                                              process_method = config['options']['PROCESS_METHOD'], 
+                                              fyi_plot=False)
 
             if wavel_map == '1':
                 # apply the wavelength solution

@@ -35,47 +35,16 @@ def worker(variables_to_pass):
     Does detector-array-column specific reductions with matrix math
     '''
 
-    profiles_array, D, array_variance, n_rd = variables_to_pass
-
-    phi = profiles_array 
- 
-    array_variance_big = array_variance
-
-    # Compute S^-2
-    S_inv_squared = 1 / array_variance_big  # Shape: (M,)
-    ipdb.set_trace()
-
-    # Compute the element-wise product of phi and S^-2
-    phi_S = phi * S_inv_squared  # Shape: (N, M) - broadcasting S_inv_squared across rows
-    ipdb.set_trace()
-
-    # Sharp+ Eqn. 9
-    c_matrix_big = np.einsum('ijk,jlk->ilk', phi_S, np.transpose(phi, (1, 0, 2)))
-    ipdb.set_trace()
+    profiles_array, D, array_variance, n_rd = variables_to_pass # CAN I SIMPLIFY THIS TO JUST D?
 
     # Sharp+ Eqn. 10
-    # stays put
     b_matrix_big = np.einsum('ijk,jk->ik', phi, np.multiply(D, S_inv_squared)) # D
-    ipdb.set_trace()
 
-    # Sharp+ Eqn. 19
-    c_mat_prime = np.einsum('ijk,jlk->ilk', phi, np.transpose(phi, (1, 0, 2)))
-    b_mat_prime = np.einsum('ijk,jk->ik', phi, array_variance_big - n_rd**2)
-    ipdb.set_trace()
-
-    # replace non-finite values with a median value to let solution work
-    finite_values_c = c_matrix_big[np.isfinite(c_matrix_big)]
-    median_value_c = np.median(finite_values_c)
-    non_finite_mask_c = ~np.isfinite(c_matrix_big)
-    c_matrix_big[non_finite_mask_c] = median_value_c # Replace non-finite values with the median value
-
-    # stays put
     finite_values_b = b_matrix_big[np.isfinite(b_matrix_big)]
     median_value_b = np.median(finite_values_b)
     non_finite_mask_b = ~np.isfinite(b_matrix_big) # mask for the non-finite values
     b_matrix_big[non_finite_mask_b] = median_value_b # Replace non-finite values with the median value
 
-    # stays put
     # Initialize an array to store the results
     # TO DO: GENERALIZE THIS TO FIT THE LENGTH OF THE INPUT SPECTRA
     shape = (len(profiles_array), np.shape(array_variance)[1]) # (# spectra, # x-pixels)
@@ -88,7 +57,6 @@ def worker(variables_to_pass):
             # Solve the least squares problem for each slice
             result_eta, _, _, _ = lstsq(c_matrix_big[:, :, i], b_matrix_big[:, i])
             result_var, _, _, _ = lstsq(c_mat_prime[:, :, i], b_mat_prime[:, i])
-            ipdb.set_trace()
             #result_eta, _, _, _ = np.linalg.lstsq(c_matrix_big[:, :, i], b_matrix_big[:, i], rcond=None)
             #result_var, _, _, _ = np.linalg.lstsq(c_mat_prime[:, :, i], b_mat_prime[:, i], rcond=None)
             # Store the result
@@ -250,21 +218,42 @@ class GenWavelSoln:
         return None
 
 #class ExtractorObservingBlock():
-    # contains machinery for doing the extraction which is NOT necessary to 
-    # initialize with each detector readout
+    # contains machinery for doing the extraction which remains the same for the 
+    # reduction of each detector readout
 
 
-class Extractor():
-    # contains machinery for doing the extraction
+class Extractor:
+    # instantiate stuff inclusing the matrices/vectors which will be reused, without change, in each frame reduction
+    
+    def __init__(self, num_spec, len_spec, phi, array_variance, n_rd=0):
 
-    def __init__(self, num_spec, len_spec):
         self.num_spec = num_spec # number of spectra to extract
         self.len_spec = len_spec # length of the spectra 
         num_cpus = multiprocessing.cpu_count()
         self.pool = Pool(num_cpus)
-    
 
-    def extract_spectra(self, target_instance, D, array_variance, n_rd=0, process_method = 'series', fyi_plot=False):
+        # phi: profiles array
+
+        # Compute S^-2
+        S_inv_squared = 1 / array_variance  # Shape: (M,)
+
+        # Compute the element-wise product of phi and S^-2
+        phi_S = phi * S_inv_squared  # Shape: (N, M) - broadcasting S_inv_squared across rows
+
+        # Sharp+ Eqn. 9
+        self.c_matrix_big = np.einsum('ijk,jlk->ilk', phi_S, np.transpose(phi, (1, 0, 2)))
+
+        # Sharp+ Eqn. 19
+        c_mat_prime = np.einsum('ijk,jlk->ilk', phi, np.transpose(phi, (1, 0, 2)))
+        b_mat_prime = np.einsum('ijk,jk->ik', phi, array_variance - n_rd**2)
+
+        # replace non-finite values with a median value to let solution work
+        finite_values_c = c_matrix_big[np.isfinite(c_matrix_big)]
+        median_value_c = np.median(finite_values_c)
+        non_finite_mask_c = ~np.isfinite(c_matrix_big)
+        self.c_matrix_big[non_finite_mask_c] = median_value_c # Replace non-finite values with the median value
+
+    def extract_one_frame(self, target_instance, D, process_method = 'series', fyi_plot=False):
         """
         Extracts the spectra
 

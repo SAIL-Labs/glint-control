@@ -71,19 +71,22 @@ def main(config_file):
         test_data_slice = test_frame[0,:,:]
     else:
         test_data_slice = test_frame
-    if (config['options']['ROT_LEFT'] == '1'): test_data_slice = np.rot90(test_data_slice, k=1)
 
     # retrieve a variance image
     # (do not fix bad pixels! causes math to fail)
     readout_variance = fits.open(config['file_names']['FILE_NAME_VAR'])[0].data
     readout_variance[readout_variance == 0] = np.nanmedian(readout_variance) # replace 0.0 pixels (since this will lead to infs later)
     readout_variance[readout_variance < 0] = np.nanmedian(readout_variance)
+    # do the images have to be rotated?
+    if (config['options']['ROT_LEFT'] == '1'): 
+        test_data_slice = np.rot90(test_data_slice, k=1)
+        readout_variance = np.rot90(readout_variance, k=1)
 
-    ## ## CONTINUE HERE: DOES THIS WORK?
     # calculate the things that will be needed when extracting spectra from individual readouts
     spec_extraction = backbone_classes.Extractor(num_spec=len(profiles), 
                                                  len_spec=np.shape(test_data_slice)[1], 
-                                                 phi=profiles, 
+                                                 sample_frame=test_data_slice,
+                                                 dict_profiles=profiles, 
                                                  array_variance=readout_variance, 
                                                  n_rd=0)
 

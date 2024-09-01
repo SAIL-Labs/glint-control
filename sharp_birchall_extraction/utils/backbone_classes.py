@@ -30,43 +30,7 @@ def rearrange_into_big_2d(matrix_input, P):
     
     return larger_matrix
 
-def worker(variables_to_pass):
-    '''
-    Does detector-array-column specific reductions with matrix math
-    '''
 
-    profiles_array, D, array_variance, n_rd = variables_to_pass # CAN I SIMPLIFY THIS TO JUST D?
-
-    # Sharp+ Eqn. 10
-    b_matrix_big = np.einsum('ijk,jk->ik', phi, np.multiply(D, S_inv_squared)) # D
-
-    finite_values_b = b_matrix_big[np.isfinite(b_matrix_big)]
-    median_value_b = np.median(finite_values_b)
-    non_finite_mask_b = ~np.isfinite(b_matrix_big) # mask for the non-finite values
-    b_matrix_big[non_finite_mask_b] = median_value_b # Replace non-finite values with the median value
-
-    # Initialize an array to store the results
-    # TO DO: GENERALIZE THIS TO FIT THE LENGTH OF THE INPUT SPECTRA
-    shape = (len(profiles_array), np.shape(array_variance)[1]) # (# spectra, # x-pixels)
-    eta_flux_mat_T_reshaped = np.zeros(shape)
-    var_mat_T_reshaped = np.zeros(shape)
-
-    # loop over cols
-    for i in range(np.shape(eta_flux_mat_T_reshaped)[1]):
-        try:
-            # Solve the least squares problem for each slice
-            result_eta, _, _, _ = lstsq(c_matrix_big[:, :, i], b_matrix_big[:, i])
-            result_var, _, _, _ = lstsq(c_mat_prime[:, :, i], b_mat_prime[:, i])
-            #result_eta, _, _, _ = np.linalg.lstsq(c_matrix_big[:, :, i], b_matrix_big[:, i], rcond=None)
-            #result_var, _, _, _ = np.linalg.lstsq(c_mat_prime[:, :, i], b_mat_prime[:, i], rcond=None)
-            # Store the result
-            eta_flux_mat_T_reshaped[:, i] = result_eta
-            var_mat_T_reshaped[:, i] = result_var
-        except:
-            eta_flux_mat_T_reshaped[:, i] = np.nan * np.ones(12)
-            var_mat_T_reshaped[:, i] = np.nan * np.ones(12)
-
-    return eta_flux_mat_T_reshaped, var_mat_T_reshaped
 
 
 def update_results(results, eta_flux, vark):
@@ -225,33 +189,38 @@ class GenWavelSoln:
 class Extractor:
     # instantiate stuff inclusing the matrices/vectors which will be reused, without change, in each frame reduction
     
-    def __init__(self, num_spec, len_spec, phi, array_variance, n_rd=0):
+    def __init__(self, num_spec, sample_frame, len_spec, dict_profiles, array_variance, n_rd=0):
 
         self.num_spec = num_spec # number of spectra to extract
+        self.sample_frame = sample_frame # sample frame
         self.len_spec = len_spec # length of the spectra 
         num_cpus = multiprocessing.cpu_count()
         self.pool = Pool(num_cpus)
+        self.n_rd = n_rd
 
         # phi: profiles array
+        # convert dictionary into a numpy array
+        self.phi = np.array(list(dict_profiles.values()))
 
         # Compute S^-2
-        S_inv_squared = 1 / array_variance  # Shape: (M,)
+        self.S_inv_squared = 1 / array_variance  # Shape: (M,)
 
         # Compute the element-wise product of phi and S^-2
-        phi_S = phi * S_inv_squared  # Shape: (N, M) - broadcasting S_inv_squared across rows
+        phi_S = self.phi * self.S_inv_squared  # Shape: (N, M) - broadcasting S_inv_squared across rows
 
         # Sharp+ Eqn. 9
-        self.c_matrix_big = np.einsum('ijk,jlk->ilk', phi_S, np.transpose(phi, (1, 0, 2)))
+        self.c_matrix_big = np.einsum('ijk,jlk->ilk', phi_S, np.transpose(self.phi, (1, 0, 2)))
 
         # Sharp+ Eqn. 19
-        c_mat_prime = np.einsum('ijk,jlk->ilk', phi, np.transpose(phi, (1, 0, 2)))
-        b_mat_prime = np.einsum('ijk,jk->ik', phi, array_variance - n_rd**2)
+        self.c_mat_prime = np.einsum('ijk,jlk->ilk', self.phi, np.transpose(self.phi, (1, 0, 2)))
+        self.b_mat_prime = np.einsum('ijk,jk->ik', self.phi, array_variance - self.n_rd**2)
 
         # replace non-finite values with a median value to let solution work
-        finite_values_c = c_matrix_big[np.isfinite(c_matrix_big)]
+        finite_values_c = self.c_matrix_big[np.isfinite(self.c_matrix_big)]
         median_value_c = np.median(finite_values_c)
-        non_finite_mask_c = ~np.isfinite(c_matrix_big)
+        non_finite_mask_c = ~np.isfinite(self.c_matrix_big)
         self.c_matrix_big[non_finite_mask_c] = median_value_c # Replace non-finite values with the median value
+
 
     def extract_one_frame(self, target_instance, D, process_method = 'series', fyi_plot=False):
         """
@@ -272,15 +241,48 @@ class Extractor:
             dict: The updated dictionary containing extracted spectra
         """
 
+        def worker(D):
+            '''
+            Does detector-array-column specific reductions with matrix math
+            '''
+
+            # Sharp+ Eqn. 10
+            b_matrix_big = np.einsum('ijk,jk->ik', self.phi, np.multiply(D, self.S_inv_squared)) # D
+
+            finite_values_b = b_matrix_big[np.isfinite(b_matrix_big)]
+            median_value_b = np.median(finite_values_b)
+            non_finite_mask_b = ~np.isfinite(b_matrix_big) # mask for the non-finite values
+            b_matrix_big[non_finite_mask_b] = median_value_b # Replace non-finite values with the median value
+
+            # Initialize an array to store the results
+            # TO DO: GENERALIZE THIS TO FIT THE LENGTH OF THE INPUT SPECTRA
+            shape = (self.num_spec, np.shape(self.sample_frame)[1]) # (# spectra, # x-pixels)
+            eta_flux_mat_T_reshaped = np.zeros(shape)
+            var_mat_T_reshaped = np.zeros(shape)
+
+            # loop over cols
+            for i in range(np.shape(eta_flux_mat_T_reshaped)[1]):
+                try:
+                    # Solve the least squares problem for each slice
+                    result_eta, _, _, _ = lstsq(self.c_matrix_big[:, :, i], b_matrix_big[:, i])
+                    result_var, _, _, _ = lstsq(self.c_mat_prime[:, :, i], self.b_mat_prime[:, i])
+                    #result_eta, _, _, _ = np.linalg.lstsq(c_matrix_big[:, :, i], b_matrix_big[:, i], rcond=None)
+                    #result_var, _, _, _ = np.linalg.lstsq(c_mat_prime[:, :, i], b_mat_prime[:, i], rcond=None)
+                    # Store the result
+                    eta_flux_mat_T_reshaped[:, i] = result_eta
+                    var_mat_T_reshaped[:, i] = result_var
+                except:
+                    eta_flux_mat_T_reshaped[:, i] = np.nan * np.ones(12)
+                    var_mat_T_reshaped[:, i] = np.nan * np.ones(12)
+
+            return eta_flux_mat_T_reshaped, var_mat_T_reshaped
+
         # set values of some things based on the target instance
         x_extent = np.shape(target_instance.sample_frame)[1]
         y_extent = np.shape(target_instance.sample_frame)[0]
         eta_flux = target_instance.spec_flux
         vark = target_instance.vark
         dict_profiles = target_instance.dict_profiles
-
-        # convert dictionary into a numpy array
-        profiles_array = np.array(list(dict_profiles.values()))
 
         # silence warnings about non-convergence
         #warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -296,14 +298,14 @@ class Extractor:
 
 
         # pack variables other than the column number into an object that can be passed to function with multiprocessing
-        variables_to_pass = [profiles_array, D, array_variance, n_rd]
+        #variables_to_pass = [D] # just the data frame
 
         # treat the columns in series or in parallel?
         if process_method == 'series':
             time_0 = time.time()
 
-            # list comprehension over all the columns
-            eta_results, var_results = worker([*variables_to_pass])
+            # put data frame into worker fcn
+            eta_results, var_results = worker(D)
 
             time_1 = time.time()
             print('---------')

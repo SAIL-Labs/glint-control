@@ -260,14 +260,30 @@ class Extractor:
             eta_flux_mat_T_reshaped = np.zeros(shape)
             var_mat_T_reshaped = np.zeros(shape)
 
-            # loop over cols
+            # list comprehension option to assign results (not faster than a for-loop)
+            '''
+            results = [
+                (lstsq(self.c_matrix_big[:, :, i], b_matrix_big[:, i])[0],
+                lstsq(self.c_mat_prime[:, :, i], self.b_mat_prime[:, i])[0])
+                for i in range(np.shape(eta_flux_mat_T_reshaped)[1])
+            ]
+
+            # Convert results to NumPy arrays
+            result_eta_array = np.array([result_eta for result_eta, _ in results]).T
+            result_var_array = np.array([result_var for _, result_var in results]).T
+
+            # Assign results to eta_flux_mat_T_reshaped and var_mat_T_reshaped
+            eta_flux_mat_T_reshaped[:, :] = result_eta_array
+            var_mat_T_reshaped[:, :] = result_var_array
+            '''
+
+            # for-loop over columns to assign results
             for i in range(np.shape(eta_flux_mat_T_reshaped)[1]):
                 try:
                     # Solve the least squares problem for each slice
                     result_eta, _, _, _ = lstsq(self.c_matrix_big[:, :, i], b_matrix_big[:, i])
                     result_var, _, _, _ = lstsq(self.c_mat_prime[:, :, i], self.b_mat_prime[:, i])
-                    #result_eta, _, _, _ = np.linalg.lstsq(c_matrix_big[:, :, i], b_matrix_big[:, i], rcond=None)
-                    #result_var, _, _, _ = np.linalg.lstsq(c_mat_prime[:, :, i], b_mat_prime[:, i], rcond=None)
+
                     # Store the result
                     eta_flux_mat_T_reshaped[:, i] = result_eta
                     var_mat_T_reshaped[:, i] = result_var

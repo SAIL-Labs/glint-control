@@ -156,104 +156,107 @@ def main(config_file):
     initial_files = os.listdir(dir_spectra_parent)
 
 
-    # Start monitoring the directory for new files
-    while True:
-        # Get the current list of files in the directory
+    # Start monitoring the directory for files
+    #while True:
         
+    if (config['options']['WHICH_FILES'] == 'new'):
+        # the new files that have appeared
+        current_files = os.listdir(dir_spectra_parent)
+        list_files = [file for file in current_files if file not in initial_files]
+        print('This new mode needs to be debugged, as the code structure has changed')
+        ipdb.set_trace()
+    elif (config['options']['WHICH_FILES'] == 'all'):
+        # all pre-existing files
+        list_files = glob.glob(dir_spectra_parent + "*.fits")
 
-        if (config['options']['WHICH_FILES'] == 'new'):
-            # the new files that have appeared
-            current_files = os.listdir(dir_spectra_parent)
-            list_files = [file for file in current_files if file not in initial_files]
-        elif (config['options']['WHICH_FILES'] == 'all'):
-            # all pre-existing files
-            list_files = glob.glob(dir_spectra_parent + "*.fits")
 
+    # Process the new files
+    for file in list_files:
 
-        # Process the new files
-        for file in list_files:
-            start_time = time.time()
+        start_time = time.time()
 
-            # Construct the full path to the file
-            file_path = os.path.join(dir_spectra_parent, file)
+        # Construct the full path to the file
+        file_path = os.path.join(dir_spectra_parent, file)
 
-            # read in image
-            hdul = fits.open(file_path)
+        # read in image
+        hdul = fits.open(file_path)
 
-            if len(np.shape(hdul[0].data)) > 2:
-                if (config['options']['WHICH_SLICE'] == '0'):
-                    readout_data = hdul[0].data[0,:,:]
-            else:
-                readout_data = hdul[0].data
+        if len(np.shape(hdul[0].data)) > 2:
+            if (config['options']['WHICH_SLICE'] == '0'):
+                readout_data = hdul[0].data[0,:,:]
+        else:
+            readout_data = hdul[0].data
 
-            # some ad hoc bad pix fixing ## ## TODO: make better badpix mask
-            readout_data[readout_data<0] = 0
-            readout_data = fcns.fix_bad(array_pass=readout_data, badpix_pass=badpix_mask)
-            readout_data[readout_data < 0] = np.nanmedian(readout_data)
+        # some ad hoc bad pix fixing ## ## TODO: make better badpix mask
+        readout_data[readout_data<0] = 0
+        readout_data = fcns.fix_bad(array_pass=readout_data, badpix_pass=badpix_mask)
+        readout_data[readout_data < 0] = np.nanmedian(readout_data)
 
-            # rotate image CCW? (to get spectra along x-axis)
-            if (config['options']['ROT_LEFT'] == '1'): readout_data = np.rot90(readout_data, k=1)
+        # rotate image CCW? (to get spectra along x-axis)
+        if (config['options']['ROT_LEFT'] == '1'): readout_data = np.rot90(readout_data, k=1)
 
-            # translate the image to align it with the basis lamp (i.e., with the wavelength solns)
-            '''
-            readout_data = shift.shiftnd(readout_data, (-yoff, -xoff))
-            readout_variance = shift.shiftnd(readout_variance, (-yoff, -xoff))
-            '''
+        # translate the image to align it with the basis lamp (i.e., with the wavelength solns)
+        '''
+        readout_data = shift.shiftnd(readout_data, (-yoff, -xoff))
+        readout_variance = shift.shiftnd(readout_variance, (-yoff, -xoff))
+        '''
 
-            # initialize basic spectrum object which contains info specific to this spectrum
-            spec_obj = backbone_classes.SpecData(num_spec = len(profiles), 
-                                                sample_frame = test_data_slice, 
-                                                profiles = profiles)
+        # initialize basic spectrum object which contains info specific to this spectrum
+        spec_obj = backbone_classes.OneSpecData(num_spec = len(profiles), 
+                                            sample_frame = test_data_slice, 
+                                            profiles = profiles)
 
-            # do the actual spectral extraction, and update the spec_obj with them
-            spec_extraction.extract_one_frame(target_instance=spec_obj, 
-                                              D=readout_data, 
-                                              process_method = config['options']['PROCESS_METHOD'], 
-                                              fyi_plot=False)
+        # do the actual spectral extraction, and update the spec_obj with them
+        spec_extraction.extract_one_frame(target_instance=spec_obj, 
+                                            D=readout_data, 
+                                            process_method = config['options']['PROCESS_METHOD'], 
+                                            fyi_plot=False)
 
-            if wavel_map == '1':
-                # apply the wavelength solution
+        if wavel_map == '1':
+            # apply the wavelength solution
 
-                fcns.apply_wavel_solns(num_spec = len(profiles), 
-                                       x_vals_spectra = x_coords_spectra_true, 
-                                       y_vals_spectra = y_coords_spectra_true,
-                                    source_instance = wavel_gen_obj, 
-                                    target_instance = spec_obj)
+            fcns.apply_wavel_solns(num_spec = len(profiles), 
+                                    x_vals_spectra = x_coords_spectra_true, 
+                                    y_vals_spectra = y_coords_spectra_true,
+                                source_instance = wavel_gen_obj, 
+                                target_instance = spec_obj)
 
-            # write to file
-            file_name_write = dir_spectra_write + 'extracted_' + os.path.basename(file_path)
-            fcns.write_to_file(target_instance=spec_obj, file_write = file_name_write)
+        # write to file
+        file_name_write = dir_spectra_write + 'extracted_' + os.path.basename(file_path)
+        fcns.write_to_file(target_instance=spec_obj, file_write = file_name_write)
 
-            end_time = time.time()
-            execution_time = end_time - start_time
-            print("Execution time total:", execution_time, "seconds")
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print("Execution time total:", execution_time, "seconds")
 
-            # make FYI plots of extracted spectra
-            # loop over all spectra on that detector frame
-            if (config['options']['WRITE_PLOTS'] == '1'):
+        # make FYI plots of extracted spectra
+        # loop over all spectra on that detector frame
+        if (config['options']['WRITE_PLOTS'] == '1'):
 
-                plt.clf()
-                for i in range(0,len(spec_obj.spec_flux)):
+            plt.clf()
+            for i in range(0,len(spec_obj.spec_flux)):
 
-                    # plot the spectra
-                    file_name_plot = config['sys_dirs']['DIR_WRITE_FYI'] + os.path.basename(file_path).split('.')[0] + '.png'
-                    if (config['options']['WAVEL_MAP'] == '1'):
-                        plt.plot(spec_obj.wavel_mapped[str(i)], spec_obj.spec_flux[str(i)]+3000*i, label='flux')
-                        #plt.plot(spec_obj.wavel_mapped[str(i)], np.sqrt(spec_obj.vark[str(i)]), label='$\sqrt{\sigma^{2}}$')
-                    elif (config['options']['WAVEL_MAP'] == '0'):
-                        plt.plot(spec_obj.spec_flux[str(i)]+3000*i, label='flux')
-                        #plt.plot(np.sqrt(spec_obj.vark[str(i)]), label='$\sqrt{\sigma^{2}}$')
-                    #plt.legend()
-                plt.ylim([0,45000])
-                plt.savefig( file_name_plot )
-                print('Wrote',file_name_plot)
+                # plot the spectra
+                file_name_plot = config['sys_dirs']['DIR_WRITE_FYI'] + os.path.basename(file_path).split('.')[0] + '.png'
+                if (config['options']['WAVEL_MAP'] == '1'):
+                    plt.plot(spec_obj.wavel_mapped[str(i)], spec_obj.spec_flux[str(i)]+3000*i, label='flux')
+                    #plt.plot(spec_obj.wavel_mapped[str(i)], np.sqrt(spec_obj.vark[str(i)]), label='$\sqrt{\sigma^{2}}$')
+                elif (config['options']['WAVEL_MAP'] == '0'):
+                    plt.plot(spec_obj.spec_flux[str(i)]+3000*i, label='flux')
+                    #plt.plot(np.sqrt(spec_obj.vark[str(i)]), label='$\sqrt{\sigma^{2}}$')
+                #plt.legend()
+            plt.ylim([0,45000])
+            plt.savefig( file_name_plot )
+            print('Wrote',file_name_plot)
 
-        # Update the initial list of files
-        if (config['options']['WHICH_FILES'] == 'new'):
-            initial_files = current_files
+    '''
+    # Update the initial list of files
+    if (config['options']['WHICH_FILES'] == 'new'):
+        initial_files = current_files
 
-        # Wait for some time before checking again
-        time.sleep(1)
+    # Wait for some time before checking again
+    time.sleep(1)
+    '''
 
 if __name__ == "__main__":
     #cProfile.run('main()', 'profile_stats.prof')

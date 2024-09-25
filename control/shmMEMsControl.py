@@ -8,7 +8,7 @@ class MEMS():
         self.dmvolt = SHM('dmvolt')  
         self.dmptt = SHM('dmptt') 
     
-    def set_ptt(self, segment:int, piston:float, tip:float, tilt:float) -> None:
+    def set_segment(self, segment:int, piston:float, tip:float, tilt:float) -> None:
         
         data = self.dmptt.get_data()
 
@@ -63,14 +63,13 @@ class MEMS():
         return self.dmptt.get_data()
     
 
-    def flatten_ptt(self) -> None:
+    def sendzeros(self) -> None:
         flat = np.zeros(111)
-        self.dmptt.set_data(flat)
+        self.dmvolt.set_data(flat)
         
-    def flatten_volt(self) -> None:
+    def flatten(self) -> None:
 
         flat = np.loadtxt('32AW038_1500nm.txt')
-        
         self.dmvolt.set_data(flat)
     
     def randomise_ptt(self):
@@ -86,8 +85,8 @@ class MEMS():
         volt = 0.5*np.random.rand(111)
         self.dmvolt.set_data(volt)
     
-    
+
     
 
-if __name__ == "__main__":
-    dm = MEMS()
+# if __name__ == "__main__":
+#     dm = MEMS()

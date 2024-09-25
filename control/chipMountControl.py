@@ -8,11 +8,15 @@ class Mount:
         # self.s = Serial('/dev/ttyUSB2')#, baudrate=38400) 
         self.s = Serial(port, baudrate)
 
-        path = os.getcwd()
+        # path = os.getcwd()
+        path = '/home/scexao/glint/control-code'
         filename = 'command_log.txt'
         file_path = f"{path}/{filename}"
 
         self.f = open(file_path, "a")
+    
+    def closeFile(self):
+        self.f.close()
     
     
     def read_command(self, cmd: str) -> str:
@@ -176,6 +180,7 @@ class Mount:
     def is_limit(self, axis:int, soft = False) -> str:
 
         '''
+
         params: soft: bool - if True, check soft limits, else check hard limits
         returns: str - "Undetected", "Detected upper limit", "Detected lower limit", "Detected upper & lower limits"
         '''
@@ -200,7 +205,7 @@ class Mount:
             raise ValueError(f'returned unidentified limit state {limit}, must be 0, 1, 2 or 3')
         return ret
 
-    def enable_lims(self, axis:int, direction:str) -> None:
+    def enable_lim(self, axis:int, direction:str) -> None:
         '''
         This function enables the limit in the specified direction
         params: direction: str - "CW" or "CCW" where "CW" is the positive direction and "CCW" is the negative direction.
@@ -231,7 +236,93 @@ class Mount:
         
         self.send_command(cmd)
 
+
+    def get_lims(self) -> None:
+
+        '''
+        This function returns the limits of the mount.
+        returns: str - a string describing the limits of the mount.
+        '''
+
+        # Check if each of the 6 axes have either a CW or CCW limit. Then will store the values of those limits in a variable, else it will be None. Finally it will store a string describing these.
+
+        ax1_hasCWlim  = self.lim_enabled(1, 'CW') 
+        ax1_hasCCWlim = self.lim_enabled(1, 'CCW')
+        ax2_hasCWlim  = self.lim_enabled(2, 'CW')
+        ax2_hasCCWlim = self.lim_enabled(2, 'CCW')
+        ax3_hasCWlim  = self.lim_enabled(3, 'CW')
+        ax3_hasCCWlim = self.lim_enabled(3, 'CCW')
+        ax4_hasCWlim  = self.lim_enabled(4, 'CW')
+        ax4_hasCCWlim = self.lim_enabled(4, 'CCW')
+        ax5_hasCWlim  = self.lim_enabled(5, 'CW')
+        ax5_hasCCWlim = self.lim_enabled(5, 'CCW')
+        ax6_hasCWlim  = self.lim_enabled(6, 'CW')
+        ax6_hasCCWlim = self.lim_enabled(6, 'CCW')
+
+        ax1_CWlim  = self.get_lim(1, 'CW')
+        ax1_CCWlim = self.get_lim(1, 'CCW')
+        ax2_CWlim  = self.get_lim(2, 'CW')
+        ax2_CCWlim = self.get_lim(2, 'CCW')
+        ax3_CWlim  = self.get_lim(3, 'CW')
+        ax3_CCWlim = self.get_lim(3, 'CCW')
+        ax4_CWlim  = self.get_lim(4, 'CW')
+        ax4_CCWlim = self.get_lim(4, 'CCW')
+        ax5_CWlim  = self.get_lim(5, 'CW')
+        ax5_CCWlim = self.get_lim(5, 'CCW')
+        ax6_CWlim  = self.get_lim(6, 'CW')
+        ax6_CCWlim = self.get_lim(6, 'CCW')
+
+        ret = f"Axis 1: CW limit ({ax1_hasCWlim}): {ax1_CWlim}, CCW limit ({ax1_hasCCWlim}): {ax1_CCWlim} \n"
+        ret += f"Axis 2: CW limit ({ax2_hasCWlim}): {ax2_CWlim}, CCW limit ({ax2_hasCCWlim}): {ax2_CCWlim} \n"
+        ret += f"Axis 3: CW limit ({ax3_hasCWlim}): {ax3_CWlim}, CCW limit ({ax3_hasCCWlim}): {ax3_CCWlim} \n"
+        ret += f"Axis 4: CW limit ({ax4_hasCWlim}): {ax4_CWlim}, CCW limit ({ax4_hasCCWlim}): {ax4_CCWlim} \n"
+        ret += f"Axis 5: CW limit ({ax5_hasCWlim}): {ax5_CWlim}, CCW limit ({ax5_hasCCWlim}): {ax5_CCWlim} \n"
+        ret += f"Axis 6: CW limit ({ax6_hasCWlim}): {ax6_CWlim}, CCW limit ({ax6_hasCCWlim}): {ax6_CCWlim}"
+
+        print(ret)
+        # return ret
     
+        # limits = [(i, dir) for i in range(1, 7) for dir in ['CW', 'CCW']]
+        # limit_values = {f'ax{i}_{dir}lim': self.get_lim(i, dir) if self.lim_enabled(i, dir) else None for i, dir in limits}
+        # ret = '\n'.join([f'Axis {i}: CW limit: {limit_values[f"ax{i}_CWlim"]} ({self.lim_enabled(i, "CW")}), CCW limit: {limit_values[f"ax{i}_CCWlim"]} ({self.lim_enabled(i, "CCW")})' for i in range(1, 7)])
+        # return ret
+
+
+    def enable_all_lims(self) -> None:
+        '''
+        This function enables all limits on the mount.
+        '''
+        self.enable_lim(1, 'CW')
+        self.enable_lim(1, 'CCW')
+        self.enable_lim(2, 'CW')
+        self.enable_lim(2, 'CCW')
+        self.enable_lim(3, 'CW')
+        self.enable_lim(3, 'CCW')
+        self.enable_lim(4, 'CW')
+        self.enable_lim(4, 'CCW')
+        self.enable_lim(5, 'CW')
+        self.enable_lim(5, 'CCW')
+        self.enable_lim(6, 'CW')
+        self.enable_lim(6, 'CCW')
+
+    def disable_all_lims(self) -> None:
+        '''
+        This function disables all limits on the mount.
+        '''
+        self.disable_lim(1, 'CW')
+        self.disable_lim(1, 'CCW')
+        self.disable_lim(2, 'CW')
+        self.disable_lim(2, 'CCW')
+        self.disable_lim(3, 'CW')
+        self.disable_lim(3, 'CCW')
+        self.disable_lim(4, 'CW')
+        self.disable_lim(4, 'CCW')
+        self.disable_lim(5, 'CW')
+        self.disable_lim(5, 'CCW')
+        self.disable_lim(6, 'CW')
+        self.disable_lim(6, 'CCW')
+        
+
     def lim_enabled(self, axis:int, direction:str) -> bool:
         '''
         This function returns whether the soft limit is enabled in the specified direction.
@@ -343,11 +434,12 @@ class Mount:
         dt = str(datetime.now())
         line = "{}: {}\n".format(dt, cmd)
         self.f.writelines(line)
+        self.f.flush()
 
 
-if __name__ == "__main__":
-    mount = Mount('/dev/serial/by-id/usb-SURUGA_SEIKI_SURUGA_SEIKI_DS102-if00-port0', 38400)
-    # mount = Mount('/dev/ttyUSB0', 38400)
+# if __name__ == "__main__":
+#     mount = Mount('/dev/serial/by-id/usb-SURUGA_SEIKI_SURUGA_SEIKI_DS102-if00-port0', 38400)
+#     # mount = Mount('/dev/ttyUSB0', 38400)
     
     
 

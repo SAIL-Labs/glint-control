@@ -198,6 +198,7 @@ def fix_bad(array_pass, badpix_pass):
     Assumes bad pixel mask has 0: good, 1: bad
     '''
     kernel_square = np.ones((3,3)) # correction kernel
+
     array_pass[badpix_pass == 1] = np.nan
     frame_fixed = interpolate_replace_nans(array=array_pass, kernel=kernel_square) # replace nans
 

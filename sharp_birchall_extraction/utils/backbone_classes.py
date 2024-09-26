@@ -43,7 +43,7 @@ def update_results(results, eta_flux, vark):
     return
 
 
-class SpecData:
+class OneSpecData:
     # holds info specific to the spectra being extracted from one detector readout
 
     def __init__(self, num_spec, sample_frame, profiles):

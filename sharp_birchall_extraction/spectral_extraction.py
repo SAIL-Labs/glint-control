@@ -62,7 +62,7 @@ def main(config_file):
     # directory to which we will write spectral solutions
     dir_spectra_write = config['sys_dirs']['DIR_WRITE']
 
-    # retrieve a bad pixel mask: 
+    # retrieve a bad pixel mask (should be in correct rotation orientation)
     badpix_mask = fits.open(config['file_names']['FILE_NAME_BADPIX'])[0].data
 
     # a sample frame (to get dims etc.)
@@ -79,8 +79,8 @@ def main(config_file):
     readout_variance[readout_variance < 0] = np.nanmedian(readout_variance)
     # do the images have to be rotated?
     if (config['options']['ROT_LEFT'] == '1'): 
-        test_data_slice = np.rot90(test_data_slice, k=1)
-        readout_variance = np.rot90(readout_variance, k=1)
+        test_data_slice = np.rot90(test_data_slice, k=3)
+        readout_variance = np.rot90(readout_variance, k=3)
 
     # calculate the things that will be needed when extracting spectra from individual readouts
     spec_extraction = backbone_classes.Extractor(num_spec=len(profiles), 
@@ -130,7 +130,7 @@ def main(config_file):
 
 
     '''
-    if (config['options']['ROT_LEFT'] == '1'): wavel_gen_obj.lamp_basis_frame = np.rot90(wavel_gen_obj.lamp_basis_frame, k=1)
+    if (config['options']['ROT_LEFT'] == '1'): wavel_gen_obj.lamp_basis_frame = np.rot90(wavel_gen_obj.lamp_basis_frame, k=3)
     '''
 
     '''
@@ -141,10 +141,10 @@ def main(config_file):
     lamp_array_this = fcns.fix_bad(array_pass=lamp_array_this, badpix_pass=badpix_mask) # fix bad pixels
 
     # rotate image CCW? (to get spectra along x-axis)
-    if (config['options']['ROT_LEFT'] == '1'): lamp_array_this = np.rot90(lamp_array_this, k=1)
+    if (config['options']['ROT_LEFT'] == '1'): lamp_array_this = np.rot90(lamp_array_this, k=3)
     '''
 
-    if (config['options']['ROT_LEFT'] == '1'): readout_variance = np.rot90(readout_variance, k=1)
+    if (config['options']['ROT_LEFT'] == '1'): readout_variance = np.rot90(readout_variance, k=3)
 
     # find offset from lamp basis image
     '''
@@ -193,7 +193,7 @@ def main(config_file):
         readout_data[readout_data < 0] = np.nanmedian(readout_data)
 
         # rotate image CCW? (to get spectra along x-axis)
-        if (config['options']['ROT_LEFT'] == '1'): readout_data = np.rot90(readout_data, k=1)
+        if (config['options']['ROT_LEFT'] == '1'): readout_data = np.rot90(readout_data, k=3)
 
         # translate the image to align it with the basis lamp (i.e., with the wavelength solns)
         '''
@@ -234,7 +234,14 @@ def main(config_file):
         if (config['options']['WRITE_PLOTS'] == '1'):
 
             plt.clf()
+            # loop over the spectra which appear simultaneously on the arrays
             for i in range(0,len(spec_obj.spec_flux)):
+
+                # for graph scale (TBD)
+                '''
+                if i==0:
+                    graph_extent = np.std()
+                '''
 
                 # plot the spectra
                 file_name_plot = config['sys_dirs']['DIR_WRITE_FYI'] + os.path.basename(file_path).split('.')[0] + '.png'
@@ -245,7 +252,7 @@ def main(config_file):
                     plt.plot(spec_obj.spec_flux[str(i)]+3000*i, label='flux')
                     #plt.plot(np.sqrt(spec_obj.vark[str(i)]), label='$\sqrt{\sigma^{2}}$')
                 #plt.legend()
-            plt.ylim([0,45000])
+            #plt.ylim([-100,45000])
             plt.savefig( file_name_plot )
             print('Wrote',file_name_plot)
 

@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import numpy as np
+import ipdb
 from glob import glob
 import os
 from astropy.io import fits
@@ -19,6 +20,9 @@ with fits.open(file_name) as hdul:
     # replace nans with median
     median_value = np.nanmedian(data)
     data = np.where(np.isnan(data), median_value, data)
+
+    #data = np.rot90(np.squeeze(data))
+    data = np.squeeze(data)
 
     new_hdul = fits.HDUList([fits.PrimaryHDU(data)])
 

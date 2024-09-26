@@ -23,11 +23,14 @@ for file_name in file_list_data:
     with fits.open(file_name) as hdul:
         dark_this = hdul[0].data
         
+        # take median of that cube
+        dark_this = np.median(dark_this, axis=0)
+
         # Append the 2D frame to the list
         frames.append(dark_this)
 
 # Convert the list of frames into a 3D NumPy array
-ipdb.set_trace()
+
 cube = np.array(frames)
 
 # Take the median along the third axis

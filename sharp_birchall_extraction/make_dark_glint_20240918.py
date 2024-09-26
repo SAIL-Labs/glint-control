@@ -4,6 +4,7 @@
 import numpy as np
 from glob import glob
 import os
+import ipdb
 from astropy.io import fits
 
 stem_read = '/import/morgana1/snert/GLINTData/data202409/20240918/apapane/'
@@ -26,6 +27,7 @@ for file_name in file_list_data:
         frames.append(dark_this)
 
 # Convert the list of frames into a 3D NumPy array
+ipdb.set_trace()
 cube = np.array(frames)
 
 # Take the median along the third axis

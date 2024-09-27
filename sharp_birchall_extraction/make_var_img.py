@@ -7,9 +7,9 @@ from glob import glob
 import os
 from astropy.io import fits
 
-stem = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/individual_slices/'
+stem = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/'
 
-file_name = stem + 'test_01_slice_009991.fits'
+file_name = stem + 'individual_slices/test_01_slice_009991.fits'
     
 with fits.open(file_name) as hdul:
     

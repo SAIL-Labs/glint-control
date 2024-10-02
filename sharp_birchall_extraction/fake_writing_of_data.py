@@ -41,7 +41,7 @@ print('Copied files deleted successfully!')
 
 # METHOD 2: Take one cube of frames, and write individual slices out to another directory
 
-source_file = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/raw/test_01.fits'
+source_file = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/dark_subted/test_01.fits'
 destination_dir = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/individual_slices/'
 
 # Read the FITS file

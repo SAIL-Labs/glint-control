@@ -5,15 +5,21 @@ import numpy as np
 from glob import glob
 import os
 from astropy.io import fits
+import ipdb
 
-stem = '/Users/bandari/Documents/git.repos/glint-control/sharp_birchall_extraction/yoo_jung_data_20240818/'
+stem = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/'
 
 file_list_data = glob(stem + 'altair_raw/*.fits')
-file_name_dark = stem + 'calibs/dark_apapane_11:47:01.304614609_trunc.fits'
+file_name_dark = stem + 'calibs/test_dark.fits'
+
 
 # read in dark
 with fits.open(file_name_dark) as hdul:
     dark = hdul[0].data
+
+    # take median along cube
+    dark = np.median(dark, axis=0)
+
 
 for file_name in file_list_data:
     # read in one FITS file data cube
@@ -22,6 +28,8 @@ for file_name in file_list_data:
         
         data = hdul[0].data
         
+        # subtract dark from each slice of the cube
+        ipdb.set_trace()
         data = np.subtract(data,dark)
 
         abs_save_name = stem + 'altair_dark_subted/' + os.path.basename(file_name)

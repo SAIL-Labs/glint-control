@@ -9,8 +9,9 @@ import ipdb
 
 stem = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/'
 
-file_list_data = glob(stem + 'altair_raw/*.fits')
+file_list_data = glob(stem + 'raw/*.fits')
 file_name_dark = stem + 'calibs/test_dark.fits'
+dir_write = stem + 'dark_subted/'
 
 
 # read in dark
@@ -20,7 +21,7 @@ with fits.open(file_name_dark) as hdul:
     # take median along cube
     dark = np.median(dark, axis=0)
 
-
+ipdb.set_trace()
 for file_name in file_list_data:
     # read in one FITS file data cube
     
@@ -32,7 +33,7 @@ for file_name in file_list_data:
         ipdb.set_trace()
         data = np.subtract(data,dark)
 
-        abs_save_name = stem + 'altair_dark_subted/' + os.path.basename(file_name)
+        abs_save_name = dir_write + os.path.basename(file_name)
 
         new_hdul = fits.HDUList([fits.PrimaryHDU(data)])
 

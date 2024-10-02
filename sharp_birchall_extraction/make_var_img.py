@@ -18,7 +18,8 @@ with fits.open(file_name) as hdul:
     data = hdul[0].data
 
     # if this is a cube, take median along the cube
-    data = np.median(data, axis=0)
+    if data.ndim > 2:
+        data = np.median(data, axis=0)
     
     # find variance
     data = np.sqrt(data)

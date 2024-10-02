@@ -212,7 +212,6 @@ class Extractor:
         self.c_matrix_big = np.einsum('ijk,jlk->ilk', phi_S, np.transpose(self.phi, (1, 0, 2)))
 
         # Sharp+ Eqn. 19
-        ipdb.set_trace()
         self.c_mat_prime = np.einsum('ijk,jlk->ilk', self.phi, np.transpose(self.phi, (1, 0, 2)))
         self.b_mat_prime = np.einsum('ijk,jk->ik', self.phi, array_variance - self.n_rd**2)
 

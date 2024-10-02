@@ -9,12 +9,18 @@ from astropy.io import fits
 
 stem = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/'
 
-file_name = stem + 'individual_slices/test_01_slice_009991.fits'
+file_name = stem + 'dark_subt/test_02.fits'
+
+dir_write = stem + 'calibs/'
     
 with fits.open(file_name) as hdul:
     
     data = hdul[0].data
+
+    # if this is a cube, take median along the cube
+    data = np.median(data, axis=0)
     
+    # find variance
     data = np.sqrt(data)
 
     # replace nans with median
@@ -26,6 +32,6 @@ with fits.open(file_name) as hdul:
 
     new_hdul = fits.HDUList([fits.PrimaryHDU(data)])
 
-    abs_save_name = stem + 'calibs/variance.fits'
+    abs_save_name = dir_write + 'variance.fits'
     new_hdul.writeto(abs_save_name, overwrite=True)
     print('Wrote',abs_save_name)

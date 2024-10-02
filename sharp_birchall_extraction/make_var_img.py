@@ -9,7 +9,7 @@ from astropy.io import fits
 
 stem = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/'
 
-file_name = stem + 'dark_subt/test_02.fits'
+file_name = stem + 'dark_subted/test_02.fits'
 
 dir_write = stem + 'calibs/'
     

@@ -269,7 +269,8 @@ if __name__ == "__main__":
     #cProfile.run('main()', 'profile_stats.prof')
 
     stem = './' # put in absolute stem here
-    main(config_file = stem + 'config_eckhart_superk_glint_20240927_cred1.ini') # 12 channel GLINT data of SuperK source
+    #main(config_file = stem + 'config_eckhart_superk_glint_20240927_cred1.ini') # 12 channel GLINT data of SuperK source
+    main(config_file = stem + 'config_yoo_jung_smf_superk_20240110.ini') # 1 channel, SMF super-K source
     #main(config_file = stem + 'config_yoo_jung_altair_20240818_cred2.ini') # 12 channel GLINT data, with wavelength solution
     #main(config_file = stem + 'config_yoo_jung_3PL.ini') # 3PL data, with wavelength solution
     #main(config_file = stem + 'config_12_channel_cred2.ini') # 12 channel GLINT data, with wavelength solution

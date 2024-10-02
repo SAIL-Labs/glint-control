@@ -90,7 +90,6 @@ def stacked_profiles(simple_profiles_config_file=None, profiles_file_name=None):
     dict_profiles = {}
 
     # abs_pos, len_spec, sigma=1, s
-    ipdb.set_trace()
     if simple_profiles_config_file is not None:
         with open(simple_profiles_config_file, 'r') as file:
             profile_data = json.load(file)

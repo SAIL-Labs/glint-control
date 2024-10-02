@@ -46,6 +46,11 @@ def main(config_file):
     # 1. generating a simple horizontal profile for each spectrum (profiles_file_name = None), or
     # 2. reading in a profiles cube from file
     if config['options']['PROFILE_SOURCE'] == 'simple':
+        # config file contains 
+            # abs_pos_00
+            # sigma
+            # len_spec
+            # array_shape: (y, x)
         simple_profiles_config_file = config['file_names']['FILE_NAME_SIMPLE_PROFILES_CONFIG']
         profiles_file_name = None
     elif config['options']['PROFILE_SOURCE'] == 'from_file':

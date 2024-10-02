@@ -21,7 +21,6 @@ with fits.open(file_name_dark) as hdul:
     # take median along cube
     dark = np.median(dark, axis=0)
 
-ipdb.set_trace()
 for file_name in file_list_data:
     # read in one FITS file data cube
     
@@ -30,7 +29,6 @@ for file_name in file_list_data:
         data = hdul[0].data
         
         # subtract dark from each slice of the cube
-        ipdb.set_trace()
         data = np.subtract(data,dark)
 
         abs_save_name = dir_write + os.path.basename(file_name)

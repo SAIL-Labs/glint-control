@@ -7,11 +7,11 @@ from glob import glob
 import os
 from astropy.io import fits
 
-stem = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/'
+stem = '~/eckhart/spectral_extraction_test_20240927/smf_yoo_jung_data/'
 
-file_name = stem + 'dark_subted/test_02.fits'
+file_name = stem + 'sci/SMF_2.fits'
 
-dir_write = stem + 'calibs/'
+dir_write = stem + 'fake_calibs/'
     
 with fits.open(file_name) as hdul:
     

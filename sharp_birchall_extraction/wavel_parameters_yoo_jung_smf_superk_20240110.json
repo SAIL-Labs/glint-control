@@ -1,0 +1,11 @@
+# abs_pos_00
+# sigma
+# len_spec
+# array_shape: (y, x)
+
+{
+  "abs_pos_00": {"0": [0, 105]},
+  "sigma": 2,
+  "len_spec": 320,
+  "array_shape": [256, 320]
+}

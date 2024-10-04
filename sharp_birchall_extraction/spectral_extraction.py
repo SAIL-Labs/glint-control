@@ -210,6 +210,8 @@ def main(config_file):
         spec_obj = backbone_classes.OneSpecData(num_spec = len(profiles), 
                                             sample_frame = test_data_slice, 
                                             profiles = profiles)
+        
+        ipdb.set_trace()
 
         # do the actual spectral extraction, and update the spec_obj with them
         spec_extraction.extract_one_frame(target_instance=spec_obj, 

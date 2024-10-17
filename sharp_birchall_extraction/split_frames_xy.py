@@ -7,7 +7,7 @@ import ipdb
 import numpy as np
 
 # directory containing frames to split
-dir_read = '/Users/bandari/Downloads/masked_frames/'
+dir_read = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/individual_slices/'
 
 file_names = glob.glob(dir_read + '*.fits')
 

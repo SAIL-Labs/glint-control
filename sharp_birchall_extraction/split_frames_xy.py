@@ -4,6 +4,7 @@ import glob
 import astropy.io.fits as fits
 import matplotlib.pyplot as plt
 import ipdb
+import numpy as np
 
 # directory containing frames to split
 dir_read = '/Users/bandari/Downloads/masked_frames/'
@@ -24,14 +25,22 @@ for file_num in range(0,len(file_names)):
 
             data_string = 'data_' + str(split_num)
             
-            data_section = data[splits_in_y[split_num]:splits_in_y[split_num+1]]
+            if len(np.shape(data))==2:
+                data_section = data[splits_in_y[split_num]:splits_in_y[split_num+1],:]
+            elif len(np.shape(data))==3:
+                data_section = data[:,splits_in_y[split_num]:splits_in_y[split_num+1],:]
             print('------')
             print(split_num)
             print(split_num+1)
 
-            plt.clf()
-            plt.imshow(data_section)
-            plt.show()
+            #plt.clf()
+            #plt.imshow(data_section)
+            #plt.show()
+
+            split_file_name = f"{file_names[file_num][:-5]}_split_{split_num}.fits"
+            ipdb.set_trace()
+            fits.writeto(split_file_name, data_section, header, overwrite=True)
+            print('Wrote',split_file_name)
 
         # Save the split data to a new FITS file
         #split_file_name = f"{file_names[file_num][:-5]}_split_{i}.fits"

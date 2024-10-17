@@ -8,11 +8,12 @@ import numpy as np
 
 # directory containing frames to split
 dir_read = '/home/scexao/eckhart/spectral_extraction_test_20240927/data/individual_slices/'
+dir_write = '/home/scexao/eckhart/chopped_data_test_20241018/data/individual_slices/'
 
 file_names = glob.glob(dir_read + '*.fits')
 
 # at what y-values should frames be split? (include 0 and -1)
-splits_in_y = [0,20,40,70,-1]
+splits_in_y = [0,20,39,67,97,115,134,153,171,190,209,228,-1]
 
 for file_num in range(0,len(file_names)):
 
@@ -38,7 +39,6 @@ for file_num in range(0,len(file_names)):
             #plt.show()
 
             split_file_name = f"{file_names[file_num][:-5]}_split_{split_num}.fits"
-            ipdb.set_trace()
             fits.writeto(split_file_name, data_section, header, overwrite=True)
             print('Wrote',split_file_name)
 
